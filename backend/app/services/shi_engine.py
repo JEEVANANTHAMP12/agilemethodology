@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
-from typing import Dict, Any, List
+from typing import Any
+
 from app.config import settings
+
 
 class SHIEngine:
     """
@@ -14,11 +16,11 @@ class SHIEngine:
 
     def calculate_shi(
         self,
-        defects: List[Dict[str, Any]],
+        defects: list[dict[str, Any]],
         building_construction_year: int,
-        inspection_telemetry: Dict[str, float],
-        previous_shi_scores: List[float] = None
-    ) -> Dict[str, Any]:
+        inspection_telemetry: dict[str, float],
+        previous_shi_scores: list[float] = None
+    ) -> dict[str, Any]:
         """
         Computes the normalized Structural Health Index (0 - 100).
         """

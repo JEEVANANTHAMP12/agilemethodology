@@ -1,14 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from typing import List
+
 from app.database import get_db
 from app.models.defect import Defect
 from app.models.image import Image
 from app.schemas.defect import DefectResponse
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/defects", tags=["Defects & Cracks"])
 
-@router.get("/inspection/{inspection_id}", response_model=List[DefectResponse])
+@router.get("/inspection/{inspection_id}", response_model=list[DefectResponse])
 def get_defects_by_inspection(inspection_id: int, db: Session = Depends(get_db)):
     images = db.query(Image).filter(Image.inspection_id == inspection_id).all()
     img_ids = [img.id for img in images]

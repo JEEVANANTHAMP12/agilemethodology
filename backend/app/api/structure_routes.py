@@ -1,21 +1,32 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from typing import List
+
+from app.core.dependencies import get_current_user
 from app.database import get_db
 from app.models.building import Building
+from app.models.user import User
 from app.models.wall import Wall
-from app.schemas.structure import BuildingCreate, BuildingResponse, WallCreate, WallResponse
+from app.schemas.structure import (
+    BuildingCreate,
+    BuildingResponse,
+    WallCreate,
+    WallResponse,
+)
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/structures", tags=["Buildings & Walls"])
 
-@router.get("/buildings", response_model=List[BuildingResponse])
+@router.get("/buildings", response_model=list[BuildingResponse])
 def get_buildings(db: Session = Depends(get_db)):
     return db.query(Building).all()
 
 @router.post("/buildings", response_model=BuildingResponse)
-def create_building(payload: BuildingCreate, user_id: int = 1, db: Session = Depends(get_db)):
+def create_building(
+    payload: BuildingCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     b = Building(
-        user_id=user_id,
+        user_id=current_user.id,
         name=payload.name,
         address=payload.address,
         construction_year=payload.construction_year,
@@ -27,7 +38,7 @@ def create_building(payload: BuildingCreate, user_id: int = 1, db: Session = Dep
     db.refresh(b)
     return b
 
-@router.get("/walls", response_model=List[WallResponse])
+@router.get("/walls", response_model=list[WallResponse])
 def get_walls(building_id: int = None, db: Session = Depends(get_db)):
     q = db.query(Wall)
     if building_id:

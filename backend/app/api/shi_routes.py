@@ -1,15 +1,16 @@
 import json
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+
 from app.database import get_db
-from app.models.inspection import Inspection
-from app.models.wall import Wall
 from app.models.building import Building
-from app.models.image import Image
 from app.models.defect import Defect
 from app.models.health_result import HealthResult
+from app.models.image import Image
+from app.models.inspection import Inspection
+from app.models.wall import Wall
 from app.schemas.shi import SHIResponse
 from app.services.shi_engine import SHIEngine
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/shi", tags=["Structural Health Index"])
 

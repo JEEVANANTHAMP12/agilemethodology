@@ -1,11 +1,16 @@
 from datetime import datetime, timezone
+
+from app.database import get_db
+from app.models.inspection import Inspection
+from app.models.rover import Rover
+from app.schemas.rover import (
+    RoverConnectRequest,
+    RoverStatusResponse,
+    RoverTelemetryUpdate,
+)
+from app.services.rover_service import RoverService
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import get_db
-from app.schemas.rover import RoverConnectRequest, RoverStatusResponse, RoverTelemetryUpdate
-from app.services.rover_service import RoverService
-from app.models.rover import Rover
-from app.models.inspection import Inspection
 
 router = APIRouter(prefix="/rover", tags=["Rover Integration"])
 

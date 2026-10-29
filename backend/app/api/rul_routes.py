@@ -1,14 +1,14 @@
 import json
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+
 from app.database import get_db
-from app.models.inspection import Inspection
-from app.models.wall import Wall
 from app.models.building import Building
 from app.models.health_result import HealthResult
 from app.models.rul_prediction import RulPrediction
+from app.models.wall import Wall
 from app.schemas.rul import RULResponse
 from app.services.rul_predictor import RULPredictor
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/rul", tags=["Remaining Useful Life"])
 

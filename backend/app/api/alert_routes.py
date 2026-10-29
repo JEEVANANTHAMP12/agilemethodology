@@ -1,18 +1,18 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from typing import List, Optional
+
 from app.database import get_db
 from app.models.alert import Alert
 from app.schemas.alert import AlertResponse
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/alerts", tags=["Alerts & Notifications"])
 
-@router.get("", response_model=List[AlertResponse])
+@router.get("", response_model=list[AlertResponse])
 def get_alerts(
     db: Session = Depends(get_db),
     unacknowledged_only: bool = False,
-    severity: Optional[str] = None,
+    severity: str | None = None,
     limit: int = 50
 ):
     query = db.query(Alert)

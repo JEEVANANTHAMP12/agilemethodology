@@ -1,16 +1,19 @@
 import random
 from datetime import datetime, timezone
+
+from app.database import get_db
+from app.models.defect import Defect
+from app.models.image import Image
+from app.models.inspection import Inspection
+from app.models.rover import Rover
+from app.models.wall import Wall
+from app.schemas.inspection import (
+    InspectionResponse,
+    InspectionStartRequest,
+    InspectionStopRequest,
+)
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Optional
-from app.database import get_db
-from app.models.inspection import Inspection
-from app.models.wall import Wall
-from app.models.rover import Rover
-from app.models.image import Image
-from app.models.defect import Defect
-from app.schemas.inspection import InspectionStartRequest, InspectionStopRequest, InspectionResponse
-from app.core.dependencies import get_optional_current_user
 
 router = APIRouter(prefix="/inspection", tags=["Inspection Lifecycle"])
 
@@ -92,7 +95,7 @@ def stop_inspection(payload: InspectionStopRequest, db: Session = Depends(get_db
     resp.total_defects = defects_count
     return resp
 
-@router.get("/list", response_model=List[InspectionResponse])
+@router.get("/list", response_model=list[InspectionResponse])
 def list_inspections(db: Session = Depends(get_db), limit: int = 50):
     inspections = db.query(Inspection).order_by(Inspection.start_time.desc()).limit(limit).all()
     results = []

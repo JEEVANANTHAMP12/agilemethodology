@@ -81,12 +81,17 @@ export const api = {
     get: (id) => request(`/inspection/${id}`)
   },
 
-  // Images & Defect Processing (Phase 5)
+  // Images & Defect Processing (Phase 5 & ML Engine)
   images: {
     upload: (formData) => request('/images/upload', {
       method: 'POST',
       body: formData
     }),
+    predictCrack: (formData) => request('/images/predict-crack', {
+      method: 'POST',
+      body: formData
+    }),
+    getMlInfo: () => request('/images/ml-info'),
     getInspectionImages: (inspectionId) => request(`/images/inspection/${inspectionId}`)
   },
 
@@ -114,9 +119,10 @@ export const api = {
     getHtmlUrl: (inspectionId) => `${BASE_URL}/reports/inspection/${inspectionId}/html`
   },
 
-  // Dashboard Aggregator (Phase 8)
+  // Dashboard Aggregator (Phase 8 & Live Pulse)
   dashboard: {
-    getOverview: () => request('/dashboard/overview')
+    getOverview: () => request('/dashboard/overview'),
+    getLivePulse: () => request('/dashboard/live-pulse')
   },
 
   // Structures (Buildings & Walls)

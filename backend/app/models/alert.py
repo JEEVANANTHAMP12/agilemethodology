@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
-from sqlalchemy.orm import relationship
+
 from app.database import Base
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
+
 
 class Alert(Base):
     __tablename__ = "alerts"

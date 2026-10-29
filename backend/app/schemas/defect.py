@@ -1,6 +1,8 @@
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Any
+
 from pydantic import BaseModel
+
 
 class DefectResponse(BaseModel):
     id: int
@@ -12,7 +14,7 @@ class DefectResponse(BaseModel):
     area_sqmm: float
     severity: str  # LOW, MODERATE, HIGH, CRITICAL
     confidence: float
-    bounding_box: Optional[Any] = None
+    bounding_box: Any | None = None
     detected_at: datetime
 
     class Config:
@@ -25,5 +27,5 @@ class CrackDetectionResult(BaseModel):
     primary_width_mm: float
     severity: str
     confidence_percentage: float
-    defects: List[DefectResponse] = []
-    annotated_image_url: Optional[str] = None
+    defects: list[DefectResponse] = []
+    annotated_image_url: str | None = None

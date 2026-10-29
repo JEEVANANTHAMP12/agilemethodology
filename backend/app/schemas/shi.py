@@ -1,10 +1,12 @@
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Any
+
 from pydantic import BaseModel
+
 
 class SHIEvaluateRequest(BaseModel):
     inspection_id: int
-    force_recalculate: Optional[bool] = False
+    force_recalculate: bool | None = False
 
 class SHIResponse(BaseModel):
     id: int
@@ -16,7 +18,7 @@ class SHIResponse(BaseModel):
     age_penalty: float
     env_penalty: float
     history_penalty: float
-    calculation_factors: Optional[Dict[str, Any]] = None
+    calculation_factors: dict[str, Any] | None = None
     evaluated_at: datetime
 
     class Config:

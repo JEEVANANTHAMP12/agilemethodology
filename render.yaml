@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: structural-rover-platform
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "bash build.sh"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: NODE_VERSION
+        value: 20.10.0

@@ -1,13 +1,14 @@
 from datetime import datetime
-from typing import Optional
+
 from pydantic import BaseModel, Field
+
 
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: str = Field(..., min_length=3, max_length=100)
     password: str = Field(..., min_length=6)
-    full_name: Optional[str] = None
-    role: Optional[str] = "inspector"
+    full_name: str | None = None
+    role: str | None = "inspector"
 
 class UserLogin(BaseModel):
     username: str
@@ -17,7 +18,7 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
-    full_name: Optional[str] = None
+    full_name: str | None = None
     role: str
     is_active: bool
     created_at: datetime

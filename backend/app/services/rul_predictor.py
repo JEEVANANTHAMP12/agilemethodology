@@ -1,5 +1,7 @@
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 import numpy as np
+
 
 class RULPredictor:
     """
@@ -13,9 +15,9 @@ class RULPredictor:
     def predict_rul(
         self,
         current_shi: float,
-        previous_shi_history: List[Dict[str, Any]] = None,
+        previous_shi_history: list[dict[str, Any]] = None,
         building_age_years: int = 15
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Calculates Estimated RUL in Years, deterioration rate, trend, and risk level.
         """

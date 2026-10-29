@@ -1,19 +1,20 @@
 from datetime import datetime
-from typing import Optional
+
 from pydantic import BaseModel
+
 
 class AlertResponse(BaseModel):
     id: int
-    inspection_id: Optional[int]
-    defect_id: Optional[int]
-    health_result_id: Optional[int]
-    rul_prediction_id: Optional[int]
+    inspection_id: int | None
+    defect_id: int | None
+    health_result_id: int | None
+    rul_prediction_id: int | None
     alert_type: str
     severity: str
     title: str
     message: str
     is_acknowledged: bool
-    acknowledged_at: Optional[datetime]
+    acknowledged_at: datetime | None
     created_at: datetime
 
     class Config:

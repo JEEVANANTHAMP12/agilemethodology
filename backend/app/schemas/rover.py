@@ -1,13 +1,14 @@
 from datetime import datetime
-from typing import Optional
+
 from pydantic import BaseModel, Field
+
 
 class RoverConnectRequest(BaseModel):
     rover_code: str = Field(default="ROVER-01", description="Unique rover identifier")
-    name: Optional[str] = "ESP32 Autonomous Crawler"
-    ip_address: Optional[str] = "192.168.4.1"
-    port: Optional[int] = 8080
-    firmware_version: Optional[str] = "v2.4.1-ESP32-CAM"
+    name: str | None = "ESP32 Autonomous Crawler"
+    ip_address: str | None = "192.168.4.1"
+    port: int | None = 8080
+    firmware_version: str | None = "v2.4.1-ESP32-CAM"
 
 class RoverStatusResponse(BaseModel):
     id: int
@@ -20,17 +21,17 @@ class RoverStatusResponse(BaseModel):
     wifi_signal_dbm: int
     firmware_version: str
     last_seen_at: datetime
-    active_inspection_id: Optional[int] = None
+    active_inspection_id: int | None = None
 
     class Config:
         from_attributes = True
 
 class RoverTelemetryUpdate(BaseModel):
     rover_code: str
-    battery_percentage: Optional[float] = None
-    status: Optional[str] = None
-    wifi_signal_dbm: Optional[int] = None
-    tilt_deg: Optional[float] = None
-    vibration_level: Optional[float] = None
-    ambient_temp_c: Optional[float] = None
-    humidity_pct: Optional[float] = None
+    battery_percentage: float | None = None
+    status: str | None = None
+    wifi_signal_dbm: int | None = None
+    tilt_deg: float | None = None
+    vibration_level: float | None = None
+    ambient_temp_c: float | None = None
+    humidity_pct: float | None = None

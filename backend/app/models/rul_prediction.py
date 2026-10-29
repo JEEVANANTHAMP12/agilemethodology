@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
-from sqlalchemy.orm import relationship
+
 from app.database import Base
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
+
 
 class RulPrediction(Base):
     __tablename__ = "rul_predictions"

@@ -1,13 +1,11 @@
-import os
 import random
-import numpy as np
-import cv2
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
-from sqlalchemy.orm import Session
+
+import cv2
+import numpy as np
 from app.models.rover import Rover
-from app.models.inspection import Inspection
-from app.config import settings
+from sqlalchemy.orm import Session
+
 
 class RoverService:
     """
@@ -42,7 +40,7 @@ class RoverService:
         return rover
 
     @staticmethod
-    def get_status(db: Session, rover_code: str = "ROVER-01") -> Optional[Rover]:
+    def get_status(db: Session, rover_code: str = "ROVER-01") -> Rover | None:
         rover = db.query(Rover).filter(Rover.rover_code == rover_code).first()
         if not rover:
             # Create a default registered rover if not present

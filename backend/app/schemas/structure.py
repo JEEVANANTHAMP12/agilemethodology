@@ -1,16 +1,17 @@
 from datetime import datetime
-from typing import Optional, List
+
 from pydantic import BaseModel, Field
+
 
 class WallCreate(BaseModel):
     building_id: int
     wall_code: str
     name: str
-    orientation: Optional[str] = "North"
-    material: Optional[str] = "Concrete"
-    surface_area_sqm: Optional[float] = 24.0
-    height_m: Optional[float] = 3.0
-    width_m: Optional[float] = 8.0
+    orientation: str | None = "North"
+    material: str | None = "Concrete"
+    surface_area_sqm: float | None = 24.0
+    height_m: float | None = 3.0
+    width_m: float | None = 8.0
 
 class WallResponse(BaseModel):
     id: int
@@ -31,8 +32,8 @@ class BuildingCreate(BaseModel):
     name: str
     address: str
     construction_year: int = Field(default=2010, ge=1800, le=2050)
-    structural_type: Optional[str] = "Reinforced Concrete"
-    notes: Optional[str] = None
+    structural_type: str | None = "Reinforced Concrete"
+    notes: str | None = None
 
 class BuildingResponse(BaseModel):
     id: int
@@ -41,9 +42,9 @@ class BuildingResponse(BaseModel):
     address: str
     construction_year: int
     structural_type: str
-    notes: Optional[str] = None
+    notes: str | None = None
     created_at: datetime
-    walls: List[WallResponse] = []
+    walls: list[WallResponse] = []
 
     class Config:
         from_attributes = True

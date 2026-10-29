@@ -25,7 +25,12 @@
 // -----------------------------------------------------------------------------
 const char* WIFI_SSID     = "STRUCTURAL_SCAN_WIFI";
 const char* WIFI_PASSWORD = "SafeConcrete2026!";
-const char* BACKEND_HOST  = "http://192.168.1.100:8000"; // Replace with FastAPI Server IP
+
+// BACKEND_HOST options:
+// - Local LAN:                   "http://192.168.1.100:8000"
+// - Live Real-Time Tunnel (ngrok): "https://your-subdomain.ngrok-free.app" (run tunnel_rover.py)
+// - Live Cloud Deployment (Render): "https://structural-rover.onrender.com"
+const char* BACKEND_HOST  = "http://192.168.1.100:8000"; 
 const char* ROVER_CODE    = "ROVER-01";
 const char* ROVER_NAME    = "ESP32 Autonomous Crawler Alpha";
 

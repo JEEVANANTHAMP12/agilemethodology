@@ -1,14 +1,16 @@
 from datetime import datetime, timezone
-from typing import Dict, Any, List
-from sqlalchemy.orm import Session
-from app.models.inspection import Inspection
-from app.models.wall import Wall
+from typing import Any
+
+from app.models.alert import Alert
 from app.models.building import Building
-from app.models.image import Image
 from app.models.defect import Defect
 from app.models.health_result import HealthResult
+from app.models.image import Image
+from app.models.inspection import Inspection
 from app.models.rul_prediction import RulPrediction
-from app.models.alert import Alert
+from app.models.wall import Wall
+from sqlalchemy.orm import Session
+
 
 class ReportGenerator:
     """
@@ -22,7 +24,7 @@ class ReportGenerator:
     """
 
     @staticmethod
-    def generate_inspection_report(db: Session, inspection_id: int) -> Dict[str, Any]:
+    def generate_inspection_report(db: Session, inspection_id: int) -> dict[str, Any]:
         inspection = db.query(Inspection).filter(Inspection.id == inspection_id).first()
         if not inspection:
             raise ValueError(f"Inspection {inspection_id} not found")
@@ -147,7 +149,7 @@ class ReportGenerator:
         return report_data
 
     @staticmethod
-    def render_html_report(data: Dict[str, Any]) -> str:
+    def render_html_report(data: dict[str, Any]) -> str:
         """
         Renders a self-contained, publication-ready engineering inspection report.
         """
@@ -199,7 +201,7 @@ class ReportGenerator:
       <div class="subtitle">ARTIFACT: {m['report_id']} | TIMESTAMP: {m['generated_at']}</div>
     </div>
     <div style="text-align: right;">
-      <span class="stamp">[{health['status']}]</span>
+      <span class="stamp" style="border-color: {status_color}; color: {status_color};">[{health['status']}]</span>
       <div style="font-size: 11px; color: #666; margin-top: 6px; font-weight: 700;">UNIT #{insp['code']}</div>
     </div>
   </div>

@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Float, DateTime
-from sqlalchemy.orm import relationship
+
 from app.database import Base
+from sqlalchemy import Column, DateTime, Float, Integer, String
+from sqlalchemy.orm import relationship
+
 
 class Rover(Base):
     __tablename__ = "rovers"

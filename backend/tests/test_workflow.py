@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 
@@ -6,16 +5,31 @@ from pathlib import Path
 backend_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from app.database import engine, Base, SessionLocal
-from app.models import User, Building, Wall, Rover, Inspection, Image, Defect, HealthResult, RulPrediction, Alert
-from app.core.security import hash_password, verify_password, create_access_token, decode_access_token
-from app.services.crack_detector import CrackDetector
-from app.services.shi_engine import SHIEngine
-from app.services.rul_predictor import RULPredictor
-from app.services.rover_service import RoverService
-from app.services.alert_manager import AlertManager
-from app.services.report_generator import ReportGenerator
 from app.config import settings
+from app.core.security import (
+    create_access_token,
+    decode_access_token,
+    hash_password,
+    verify_password,
+)
+from app.database import Base, SessionLocal, engine
+from app.models import (
+    Building,
+    Defect,
+    HealthResult,
+    Image,
+    Inspection,
+    RulPrediction,
+    User,
+    Wall,
+)
+from app.services.alert_manager import AlertManager
+from app.services.crack_detector import CrackDetector
+from app.services.report_generator import ReportGenerator
+from app.services.rover_service import RoverService
+from app.services.rul_predictor import RULPredictor
+from app.services.shi_engine import SHIEngine
+
 
 def test_full_workflow():
     print("=== STEP 1: INITIALIZING DATABASE & TABLES ===")
@@ -77,7 +91,7 @@ def test_full_workflow():
     detector = CrackDetector(pixels_per_mm=settings.DEFAULT_PIXELS_PER_MM)
     det_result = detector.analyze_image(str(test_img_path), str(proc_img_path))
     assert proc_img_path.exists()
-    print(f"Crack Detection Output:")
+    print("Crack Detection Output:")
     print(f"  - Crack Detected: {det_result['crack_detected']}")
     print(f"  - Total Cracks: {det_result['total_cracks']}")
     print(f"  - Primary Length: {det_result['primary_length_mm']} mm")

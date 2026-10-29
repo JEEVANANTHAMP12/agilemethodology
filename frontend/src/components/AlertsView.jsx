@@ -1,128 +1,105 @@
 import React, { useState } from 'react';
-import { Card, Badge, Button } from './UI/Components';
+import { Card, Badge, Button, Checkbox, EmptyState, useToast } from '../ui';
 import { IconAlert, IconAlertOctagon, IconCheckCircle, IconCheck } from './UI/Icons';
-import { DesignTokens } from '../tokens';
 import { api } from '../services/api';
 
 export const AlertsView = ({ alerts = [], onAlertAcknowledged }) => {
   const [filterUnack, setFilterUnack] = useState(false);
   const [loadingId, setLoadingId] = useState(null);
+  const toast = useToast();
 
   const handleAck = async (alertId) => {
     try {
       setLoadingId(alertId);
       await api.alerts.acknowledge(alertId);
+      toast.success('Alert acknowledged', { title: 'Safety register updated' });
       if (onAlertAcknowledged) onAlertAcknowledged();
     } catch (e) {
-      alert('Alert acknowledgement error: ' + e.message);
+      toast.error(e.message || 'Unable to acknowledge the alert.', { title: 'Acknowledgement failed' });
     } finally {
       setLoadingId(null);
     }
   };
 
-  const displayedAlerts = filterUnack ? alerts.filter(a => !a.is_acknowledged) : alerts;
+  const displayedAlerts = filterUnack ? alerts.filter((a) => !a.is_acknowledged) : alerts;
+  const unacknowledged = alerts.filter((a) => !a.is_acknowledged).length;
 
   return (
     <Card
+      className="alerts-panel"
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <IconAlert size={16} color="#111111" />
-          <span>Engineering Safety Notifications</span>
-        </div>
+        <span className="dash-card-title">
+          <IconAlert size={18} />
+          <span>Engineering Safety &amp; Structural Threshold Alerts</span>
+        </span>
       }
-      subtitle="Structural threshold monitoring & intervention triggers"
-      style={{ marginBottom: '24px' }}
+      subtitle="Autonomous threshold monitoring, fracture aperture triggers, and RUL failure limits"
+      tag={
+        <Badge variant={unacknowledged > 0 ? 'danger' : 'success'} dot>
+          {unacknowledged > 0 ? `${unacknowledged} open` : 'All clear'}
+        </Badge>
+      }
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-        <div style={{ fontSize: '13px', color: '#787774' }}>
-          Real-time safety rules evaluate fracture metrics, SHI drops, and RUL limits
-        </div>
-
-        <label style={{ fontSize: '12px', color: '#787774', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={filterUnack}
-            onChange={(e) => setFilterUnack(e.target.checked)}
-            style={{ accentColor: '#111111' }}
-          />
-          Show Unacknowledged Only
-        </label>
+      <div className="alerts-panel__toolbar">
+        <p className="ui-text-sm ui-muted">
+          Real-time safety rules evaluate fracture metrics, Structural Health Index drops, and RUL limits.
+        </p>
+        <Checkbox
+          label="Show unacknowledged only"
+          checked={filterUnack}
+          onChange={(event) => setFilterUnack(event.target.checked)}
+        />
       </div>
 
       {displayedAlerts.length === 0 ? (
-        <div style={{ padding: '32px', textAlign: 'center', color: '#787774', background: '#FBFBFA', border: '1px dashed #EAEAEA', borderRadius: '8px' }}>
-          <IconCheckCircle size={26} color="#346538" style={{ margin: '0 auto 8px', display: 'block' }} />
-          <div style={{ color: '#346538', fontSize: '14px', fontWeight: 600 }}>
-            All Safety Thresholds Nominal
-          </div>
-          <div style={{ marginTop: '4px', fontSize: '12px' }}>
-            No unresolved alerts or safety interventions currently pending.
-          </div>
-        </div>
+        <EmptyState
+          icon={<IconCheckCircle size={24} />}
+          title="All structural thresholds nominal"
+          description="No unresolved alerts or safety interventions are currently pending."
+          action={
+            filterUnack ? (
+              <Button size="sm" variant="secondary" onClick={() => setFilterUnack(false)}>
+                Show all alerts
+              </Button>
+            ) : null
+          }
+        />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {displayedAlerts.map((a) => {
-            const isCrit = a.severity === 'CRITICAL';
-            const { pastelRed, pastelYellow } = DesignTokens.colors;
-            const currentStyle = isCrit ? pastelRed : pastelYellow;
-
+        <div className="alerts-panel__list">
+          {displayedAlerts.map((alert) => {
+            const isCritical = alert.severity === 'CRITICAL';
             return (
               <div
-                key={a.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '14px 18px',
-                  background: currentStyle.bg,
-                  border: `1px solid ${currentStyle.border}`,
-                  borderRadius: '8px',
-                  gap: '14px',
-                  flexWrap: 'wrap'
-                }}
+                key={alert.id}
+                className={`alerts-panel__item ${isCritical ? 'is-critical' : 'is-warning'} ${alert.is_acknowledged ? 'is-acknowledged' : ''}`}
               >
-                <div style={{ flex: 1, minWidth: '240px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <Badge
-                      variant={isCrit ? 'danger' : 'warning'}
-                      size="sm"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      {isCrit ? <IconAlertOctagon size={11} /> : <IconAlert size={11} />}
-                      <span>{a.severity}</span>
+                <div className="alerts-panel__content">
+                  <div className="alerts-panel__meta">
+                    <Badge variant={isCritical ? 'danger' : 'warning'} size="sm">
+                      {isCritical ? <IconAlertOctagon size={11} /> : <IconAlert size={11} />}
+                      {alert.severity}
                     </Badge>
-                    <span style={{ fontSize: '11px', color: '#787774', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      {a.type}
-                    </span>
-                    {a.is_acknowledged && (
-                      <Badge
-                        variant="success"
-                        size="sm"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      >
+                    <span className="alerts-panel__type">{alert.type}</span>
+                    {alert.is_acknowledged && (
+                      <Badge variant="success" size="sm">
                         <IconCheck size={10} />
-                        <span>Acknowledged</span>
+                        Acknowledged
                       </Badge>
                     )}
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#111111' }}>
-                    {a.title}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#555555', marginTop: '2px', lineHeight: '1.5' }}>
-                    {a.message}
-                  </div>
+                  <div className="alerts-panel__title">{alert.title}</div>
+                  <p className="alerts-panel__message">{alert.message}</p>
                 </div>
 
-                {!a.is_acknowledged && (
+                {!alert.is_acknowledged && (
                   <Button
                     variant="secondary"
                     size="sm"
-                    loading={loadingId === a.id}
-                    onClick={() => handleAck(a.id)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    loading={loadingId === alert.id}
+                    icon={<IconCheck size={12} />}
+                    onClick={() => handleAck(alert.id)}
                   >
-                    <IconCheck size={12} />
-                    <span>Acknowledge</span>
+                    Acknowledge
                   </Button>
                 )}
               </div>

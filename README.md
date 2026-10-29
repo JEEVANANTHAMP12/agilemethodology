@@ -47,9 +47,14 @@ An end-to-end autonomous structural inspection platform integrating an **ESP32 C
 
 ## Key Modules Built
 
-### 1. Database & ORM (Phase 2)
-The database structure establishes the required engineering relationship flow:
-`USER` → `BUILDING` → `WALL` → `INSPECTION` → `IMAGE` → `DEFECT` → `HEALTH_RESULT` → `RUL_PREDICTION` → `ALERT`
+### 1. Database & ORM (Phase 2 & MySQL Integration)
+- **Primary Engine**: MySQL 8.0 with SQLAlchemy 2.0 ORM and PyMySQL driver
+- **Connection Pooling**: `pool_size=10`, `pool_recycle=3600`, `pool_pre_ping=True`
+- **Auto-Initialization**: Automatic schema and database creation (`ensure_mysql_database`)
+- **Graceful Fallback**: Automatically falls back to SQLite if MySQL is offline or not configured
+- **Data Migration**: Built-in automated migrator (`python backend/migrate_to_mysql.py`)
+- **Relationship Pipeline**:
+  `USER` → `BUILDING` → `WALL` → `INSPECTION` → `IMAGE` → `DEFECT` → `HEALTH_RESULT` → `RUL_PREDICTION` → `ALERT`
 
 ### 2. User Management & Authentication (Phase 3)
 - Stateless JWT authentication (`HS256`)
@@ -92,7 +97,7 @@ The database structure establishes the required engineering relationship flow:
 - Outputs estimated years, annual degradation rate, deterioration trend (`Stable`, `Increasing`, `Accelerating`), and risk level.
 
 ### 7. Modern Dashboard (Phase 8)
-- Authored with intentional design tokens from the **AI UI Library** (`#2563EB`, `#7C3AED`, `#06B6D4`, `#10B981`, `#EF4444`).
+- Built on **Agile UI**, an in-repo, dependency-free design system with dark/light semantic tokens, reusable primitives, and SVG chart components.
 - **Top Cards**: Rover Status, Health Index, Wall Status, Predicted RUL.
 - **Live Inspection Panel**: Start/stop controls, telemetry gauges, manual image uploader, and hardware-in-the-loop scan simulator.
 - **Crack Analysis Panel**: Side-by-side raw vs. processed image viewer, metrics summary, and contour breakdown table.
@@ -107,27 +112,77 @@ The database structure establishes the required engineering relationship flow:
   - Low predicted RUL (< 10 yrs) → Maintenance Mandated Alert
 - Generates downloadable and printable HTML / PDF engineering dossiers (`/api/reports/inspection/{id}/html`).
 
+### 9. Agile UI Library & UI Kit (Phase 10)
+- **Token-driven design system** at `frontend/src/ui/` with primitive, semantic, and component layers.
+- **Dark cockpit / light editorial themes** persisted under `rover_ui_theme` and exposed through `useTheme()`.
+- **Reusable primitives**: Button, Card, Badge, Input/Select/Textarea, Checkbox/Switch, Modal, Tabs/SegmentedControl, DataTable, Progress, Tooltip, Toast, Skeleton, EmptyState, Stat, PageHeader, Alert, Spinner, Kbd, Avatar, Divider, Chip, Metric.
+- **Data visualisation**: Sparkline, LineChart, BarChart, RadialGauge, LevelMeter.
+- **Backward compatibility**: `components/UI/Components.jsx` re-exports the new library, so existing feature panels migrate incrementally.
+- **Interactive showcase**: open [`http://localhost:5173/#/ui-kit`](http://localhost:5173/#/ui-kit) while the frontend is running.
+- **Documentation**: [Project analysis](docs/PROJECT_ANALYSIS.md) · [UI library reference](docs/UI_LIBRARY.md).
+
+### 10. Knowledge Graph
+- A code-only graphify graph covers the FastAPI backend, React frontend, UI library, tests, firmware, and deployment config.
+- **Outputs**:
+  - `graphify-out/graph.html` — self-contained interactive graph (open directly in a browser).
+  - `graphify-out/graph.json` — GraphRAG-ready nodes, edges, and community labels.
+  - `graphify-out/GRAPH_REPORT.md` — God Nodes, surprising connections, communities, and suggested questions.
+- The corpus intentionally excludes `node_modules`, build output, stored inspection images, docs, and generated graph artifacts.
+
 ---
 
 ## Running the Application
 
-### Backend (FastAPI)
+### 1. Instant Direct Access (No Login Barrier)
+- The application bypasses login and registration requirements. Opening the web client or server lands directly on the live **Autonomous Structural Health & Crack Metrology Dashboard** with full operator privileges.
+
+### 2. Local Full-Stack Development
 ```bash
+# Terminal 1 - Backend (FastAPI):
 cd backend
 python -m pip install -r requirements.txt
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-API Documentation available at: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-### Frontend (React + Vite)
-```bash
+# Terminal 2 - Frontend (React + Vite):
 cd frontend
 npm install
 npm run dev
 ```
-Access the application dashboard at: [http://127.0.0.1:5173/](http://127.0.0.1:5173/)
+- Dashboard UI: [http://localhost:5173/](http://localhost:5173/)
+- UI Kit showcase: [http://localhost:5173/#/ui-kit](http://localhost:5173/#/ui-kit)
+- Swagger API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### Running Verification Tests
+---
+
+## 🌐 Live Real-Time Operations: ngrok & Render
+
+### Method A: Live Real-Time Tunneling with ngrok
+To connect a physical ESP32-CAM crawler over Wi-Fi or cellular from anywhere in the world to your local machine:
+```bash
+# 1. Start your local backend on port 8000:
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# 2. In another terminal, launch the live tunnel:
+python tunnel_rover.py 8000
+# (Or double-click run_tunnel.bat)
+```
+- **Output:** Provides a public secure URL such as `https://<subdomain>.ngrok-free.app`.
+- **Rover Config:** Set `BACKEND_HOST = "https://<subdomain>.ngrok-free.app"` in `firmware/esp32_cam_rover/esp32_cam_rover.ino`.
+- **Live Stream:** Frames captured by the ESP32 camera are uploaded in real-time, processed with OpenCV, and visualized live on the web console.
+
+### Method B: 24/7 Cloud Deployment on Render
+Deploy the complete unified system (FastAPI backend + React frontend) to [Render](https://render.com) for free:
+1. Push your repository to **GitHub**.
+2. Go to [Render Dashboard](https://dashboard.render.com/) -> **New +** -> **Blueprint**.
+3. Select this repository. Render automatically reads `render.yaml` and executes `bash build.sh`.
+4. Render provisions a 24/7 HTTPS live URL:
+   - `https://<your-service>.onrender.com/` (Live Web Dashboard)
+   - `https://<your-service>.onrender.com/docs` (Swagger REST API)
+5. Set `BACKEND_HOST = "https://<your-service>.onrender.com"` in `firmware/esp32_cam_rover/esp32_cam_rover.ino`.
+
+---
+
+## Running Verification Tests
 ```bash
 # Internal workflow test:
 python backend/tests/test_workflow.py
@@ -135,8 +190,3 @@ python backend/tests/test_workflow.py
 # End-to-end API pipeline test:
 python test_e2e_api.py
 ```
-
-### Default Credentials
-- **Username:** `inspector`
-- **Password:** `admin123`
-*(Or click "Autofill Default Credentials" on the login screen)*

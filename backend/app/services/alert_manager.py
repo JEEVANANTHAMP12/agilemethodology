@@ -1,9 +1,10 @@
-from typing import List, Optional
-from sqlalchemy.orm import Session
+
 from app.models.alert import Alert
 from app.models.defect import Defect
 from app.models.health_result import HealthResult
 from app.models.rul_prediction import RulPrediction
+from sqlalchemy.orm import Session
+
 
 class AlertManager:
     """
@@ -15,11 +16,11 @@ class AlertManager:
     def evaluate_inspection_alerts(
         db: Session,
         inspection_id: int,
-        defects: List[Defect] = None,
-        health_result: Optional[HealthResult] = None,
-        rul_prediction: Optional[RulPrediction] = None
-    ) -> List[Alert]:
-        new_alerts: List[Alert] = []
+        defects: list[Defect] = None,
+        health_result: HealthResult | None = None,
+        rul_prediction: RulPrediction | None = None
+    ) -> list[Alert]:
+        new_alerts: list[Alert] = []
 
         # 1. Defect Severity Alerts
         # Rule: IF crack severity = HIGH or CRITICAL -> Critical Alert

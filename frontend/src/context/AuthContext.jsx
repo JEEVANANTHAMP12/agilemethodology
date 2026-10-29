@@ -1,64 +1,36 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../services/api';
+import React, { createContext, useContext, useState } from 'react';
 
-const AuthContext = createContext(null);
+const defaultInspector = {
+  id: 1,
+  username: 'inspector',
+  full_name: 'Jeeva - Chief Structural Engineer',
+  role: 'inspector',
+  email: 'inspector@rover-agile.org'
+};
+
+const AuthContext = createContext({
+  user: defaultInspector,
+  loading: false,
+  isAuthenticated: true,
+  login: async () => defaultInspector,
+  register: async () => defaultInspector,
+  logout: () => {}
+});
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem('rover_auth_token');
-    const storedUser = localStorage.getItem('rover_user');
-    if (token && storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-        // Verify with /me
-        api.auth.me()
-          .then((u) => setUser(u))
-          .catch(() => {
-            // Token might be expired, clear session
-            localStorage.removeItem('rover_auth_token');
-            localStorage.removeItem('rover_user');
-            setUser(null);
-          })
-          .finally(() => setLoading(false));
-      } catch (e) {
-        setUser(null);
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
-    }
-  }, []);
-
-  const login = async (username, password) => {
-    const data = await api.auth.login(username, password);
-    localStorage.setItem('rover_auth_token', data.access_token);
-    localStorage.setItem('rover_user', JSON.stringify(data.user));
-    setUser(data.user);
-    return data;
-  };
-
-  const register = async (userData) => {
-    const data = await api.auth.register(userData);
-    localStorage.setItem('rover_auth_token', data.access_token);
-    localStorage.setItem('rover_user', JSON.stringify(data.user));
-    setUser(data.user);
-    return data;
-  };
-
-  const logout = () => {
-    localStorage.removeItem('rover_auth_token');
-    localStorage.removeItem('rover_user');
-    setUser(null);
-    try {
-      api.auth.logout();
-    } catch (e) {}
-  };
+  const [user] = useState(defaultInspector);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading: false,
+        isAuthenticated: true,
+        login: async () => defaultInspector,
+        register: async () => defaultInspector,
+        logout: () => {}
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

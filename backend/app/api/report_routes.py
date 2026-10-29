@@ -1,8 +1,8 @@
+from app.database import get_db
+from app.services.report_generator import ReportGenerator
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
-from app.database import get_db
-from app.services.report_generator import ReportGenerator
 
 router = APIRouter(prefix="/reports", tags=["Inspection Reports"])
 
