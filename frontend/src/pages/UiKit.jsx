@@ -18,6 +18,7 @@ import {
   PageHeader,
   Progress,
   RadialGauge,
+  Reveal,
   SectionHeader,
   SegmentedControl,
   Select,
@@ -137,6 +138,7 @@ export function UiKit() {
 
       <main className="ui-main">
         <PageHeader
+          className="ui-animate-rise"
           eyebrow={
             <>
               <span className="ui-live-dot" style={{ color: 'var(--accent-cyan)' }} />
@@ -157,8 +159,9 @@ export function UiKit() {
           }
         />
 
-        <div className="uikit__hero-grid">
-          <Card variant="accent" className="uikit__hero-card">
+        <Reveal delay={80}>
+          <div className="uikit__hero-grid">
+            <Card variant="accent" className="uikit__hero-card">
             <div className="uikit__hero-copy">
               <Badge variant="info" dot>Semantic tokens</Badge>
               <h2>One language for every surface.</h2>
@@ -204,10 +207,12 @@ export function UiKit() {
               footer={<><span>Risk</span><strong>Moderate</strong></>}
             />
           </div>
-        </div>
+          </div>
+        </Reveal>
 
-        <SectionHeader
-          eyebrow="01 · Foundations"
+        <Reveal>
+          <SectionHeader
+            eyebrow="01 · Foundations"
           title="Tokens, type, and spacing"
           description="Primitive values are composed into semantic tokens. Components never hardcode a color, radius, or duration."
         />
@@ -223,8 +228,8 @@ export function UiKit() {
                 ['Border', 'var(--border)'],
                 ['Text primary', 'var(--text-primary)'],
                 ['Accent cyan', 'var(--accent-cyan)'],
-                ['Accent blue', 'var(--accent-primary)'],
-                ['Accent violet', 'var(--accent-secondary)'],
+                ['Accent teal', 'var(--accent-primary)'],
+                ['Accent sky', 'var(--accent-secondary)'],
                 ['Emerald', 'var(--accent-emerald)'],
                 ['Amber', 'var(--accent-amber)'],
                 ['Red', 'var(--accent-red)'],
@@ -255,7 +260,8 @@ export function UiKit() {
               ))}
             </div>
           </Card>
-        </div>
+          </div>
+        </Reveal>
 
         <SectionHeader
           eyebrow="02 · Actions"

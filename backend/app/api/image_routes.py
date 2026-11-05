@@ -509,7 +509,7 @@ async def predict_wall_crack_by_photo(
         "shi_score": health_result.shi_score,
         "health_status": health_result.health_status,
         "estimated_rul_years": rul_rec.estimated_rul_years if rul_rec else None,
-        "timestamp": image_record.timestamp.isoformat() if image_record.timestamp else None
+        "timestamp": image_record.timestamp.isoformat() if image_record.timestamp is not None else None
     }
 
 @router.get("/ml-info")
@@ -544,7 +544,7 @@ def get_inspection_images(inspection_id: int, db: Session = Depends(get_db)):
             "inspection_id": img.inspection_id,
             "file_name": img.file_name,
             "original_url": f"/api/images/file/original/{img.original_path}",
-            "processed_url": f"/api/images/file/processed/{img.processed_path}" if img.processed_path else None,
+            "processed_url": f"/api/images/file/processed/{img.processed_path}" if img.processed_path is not None else None,
             "sequence_number": img.sequence_number,
             "timestamp": img.timestamp,
             "defects": [

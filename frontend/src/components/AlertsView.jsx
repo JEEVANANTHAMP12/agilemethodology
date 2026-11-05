@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { Card, Badge, Button, Checkbox, EmptyState, useToast } from '../ui';
-import { IconAlert, IconAlertOctagon, IconCheckCircle, IconCheck } from './UI/Icons';
+import {
+  AlertTriangle as IconAlert,
+  AlertOctagon as IconAlertOctagon,
+  CheckCircle2 as IconCheckCircle,
+  Check as IconCheck
+} from 'lucide-react';
 import { api } from '../services/api';
 
 export const AlertsView = ({ alerts = [], onAlertAcknowledged }) => {

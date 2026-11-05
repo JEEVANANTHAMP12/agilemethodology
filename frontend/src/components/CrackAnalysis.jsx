@@ -1,18 +1,12 @@
 import React, { useState } from 'react';
 import { Card, Badge, FauxWindowHeader, Button, Modal, Input } from './UI/Components';
-import { useToast } from '../ui';
+import { useToast, CrackApertureProfileChart, DefectSeverityBarChart } from '../ui';
 import {
-  IconCrosshair,
-  IconEye,
-  IconCamera,
-  IconUpload,
-  IconCpu,
-  IconActivity,
-  IconRefresh,
-  IconShield,
-  IconAlert,
-  IconZoomIn
-} from './UI/Icons';
+  Crosshair as IconCrosshair,
+  Camera as IconCamera,
+  Upload as IconUpload
+} from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { DesignTokens } from '../tokens';
 import { useAnimatedNumber } from './UI/useAnimatedNumber';
 import { api } from '../services/api';
@@ -23,8 +17,6 @@ export const CrackAnalysis = ({ crackData = {}, onActionComplete }) => {
   const toast = useToast();
   const [activeView, setActiveView] = useState('side-by-side');
   const [showScanHUD, setShowScanHUD] = useState(true);
-  const [hoveredProfilePoint, setHoveredProfilePoint] = useState(null);
-  const [crosshairPos, setCrosshairPos] = useState(null);
 
   // ML Photo Prediction Studio State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -32,7 +24,6 @@ export const CrackAnalysis = ({ crackData = {}, onActionComplete }) => {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [standoffDistance, setStandoffDistance] = useState(250);
   const [isPredicting, setIsPredicting] = useState(false);
-  const [predictionFeedback, setPredictionFeedback] = useState(null);
   const [dragOver, setDragOver] = useState(false);
 
   const {
@@ -45,7 +36,6 @@ export const CrackAnalysis = ({ crackData = {}, onActionComplete }) => {
     primary_length_mm = 0.0,
     primary_width_mm = 0.0,
     confidence_percentage = 96.5,
-    crack_probability = 0.0,
     aci_224r_compliant = true,
     ml_model_version = '2.4.0-Ensemble-GB-RF',
     defects = []
@@ -91,10 +81,13 @@ export const CrackAnalysis = ({ crackData = {}, onActionComplete }) => {
       fd.append('distance_to_wall_mm', standoffDistance);
 
       const res = await api.images.predictCrack(fd);
-      setPredictionFeedback(res);
       setIsUploadModalOpen(false);
       setSelectedPhoto(null);
       setPhotoPreview(null);
+
+      if (res && (!res.crack_detected || res.total_cracks === 0)) {
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+      }
 
       // Trigger immediate real-time dashboard synchronization
       if (onActionComplete) {
@@ -112,6 +105,9 @@ export const CrackAnalysis = ({ crackData = {}, onActionComplete }) => {
     try {
       setIsPredicting(true);
       await api.rover.simulateScan(severity);
+      if (severity === 'NONE') {
+        confetti({ particleCount: 75, spread: 60, origin: { y: 0.6 } });
+      }
       if (onActionComplete) {
         onActionComplete();
       }
@@ -122,73 +118,8 @@ export const CrackAnalysis = ({ crackData = {}, onActionComplete }) => {
     }
   };
 
-  // Generate synthetic profile data points along the fissure skeleton
   const lengthNum = Math.max(10, primary_length_mm || 120);
   const maxWidthNum = Math.max(0.1, primary_width_mm || 0.85);
-
-  const numProfileSamples = 24;
-  const profilePoints = [];
-  for (let i = 0; i <= numProfileSamples; i++) {
-    const fraction = i / numProfileSamples;
-    const distance_mm = Math.round(fraction * lengthNum * 10) / 10;
-    const bellFactor = Math.sin(fraction * Math.PI);
-    const noise = Math.sin(fraction * 18) * 0.12 * bellFactor;
-    const aperture_mm = Math.max(0.04, Math.round((bellFactor * maxWidthNum + noise) * 100) / 100);
-    profilePoints.push({
-      distance_mm,
-      aperture_mm
-    });
-  }
-
-  // Proper Cartesian dimensions for Aperture Cross-Section Profile
-  const chartWidth = 720;
-  const chartHeight = 220;
-  const padLeft = 52;
-  const padRight = 32;
-  const padTop = 24;
-  const padBottom = 34;
-  const plotW = chartWidth - padLeft - padRight;
-  const plotH = chartHeight - padTop - padBottom;
-  const maxProfileY = Math.max(0.6, maxWidthNum * 1.35);
-
-  const ySteps = 4;
-  const yTicks = Array.from({ length: ySteps + 1 }, (_, i) => {
-    return Math.round((maxProfileY * (ySteps - i) / ySteps) * 100) / 100;
-  });
-
-  const getYCoord = (val) => padTop + plotH - (Math.min(maxProfileY, Math.max(0, val)) / maxProfileY) * plotH;
-  const getXCoord = (i) => padLeft + (i / (profilePoints.length - 1)) * plotW;
-
-  const svgCoords = profilePoints.map((pt, i) => {
-    const x = getXCoord(i);
-    const y = getYCoord(pt.aperture_mm);
-    return { ...pt, x, y, idx: i };
-  });
-
-  // Spline for aperture curve
-  const generateSpline = (coords) => {
-    if (coords.length === 0) return '';
-    let d = `M ${coords[0].x} ${coords[0].y}`;
-    for (let i = 0; i < coords.length - 1; i++) {
-      const p0 = coords[Math.max(0, i - 1)];
-      const p1 = coords[i];
-      const p2 = coords[i + 1];
-      const p3 = coords[Math.min(coords.length - 1, i + 2)];
-
-      const cp1x = p1.x + (p2.x - p0.x) / 6;
-      const cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6;
-      const cp2y = p2.y - (p3.y - p1.y) / 6;
-
-      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
-    }
-    return d;
-  };
-
-  const profileLinePath = generateSpline(svgCoords);
-  const profileAreaPath = svgCoords.length > 0
-    ? `${profileLinePath} L ${svgCoords[svgCoords.length - 1].x} ${padTop + plotH} L ${svgCoords[0].x} ${padTop + plotH} Z`
-    : '';
 
   return (
     <Card
@@ -561,452 +492,75 @@ export const CrackAnalysis = ({ crackData = {}, onActionComplete }) => {
         </div>
       )}
 
-      {/* 5. Dedicated Crack Aperture Profiling Graph (Cross-Section Profile) */}
+      {/* 5. Modern Crack Metrology & Aperture Profiling Analytics */}
       {total_defects > 0 && (
-        <div
-          className="data-card-interactive"
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: '10px',
-            padding: '20px 18px 16px',
-            marginBottom: '20px',
-            position: 'relative'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+          {/* Left: Fissure Aperture Cross-Section Profile */}
+          <div
+            className="data-card-interactive"
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '10px',
+              padding: '18px 16px',
+              position: 'relative'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+              <div>
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
                   Fissure Aperture Cross-Section Profile
                 </span>
-                <span style={{
-                  background: 'var(--border)',
-                  color: 'var(--text-secondary)',
-                  padding: '2px 7px',
-                  borderRadius: '4px',
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  fontFamily: DesignTokens.typography.mono
-                }}>
-                  {profilePoints.length} SAMPLES
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  Distance-transform aperture variation vs ACI 224R limits (0.30mm & 0.40mm)
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '6px', fontSize: '11px' }}>
+                <span style={{ background: 'var(--surface-alt)', padding: '2px 7px', borderRadius: '4px', border: '1px solid var(--border)', fontFamily: DesignTokens.typography.mono }}>
+                  Max: {maxWidthNum.toFixed(2)} mm
+                </span>
+                <span style={{ background: 'var(--surface-alt)', padding: '2px 7px', borderRadius: '4px', border: '1px solid var(--border)', fontFamily: DesignTokens.typography.mono }}>
+                  Span: {lengthNum.toFixed(1)} mm
                 </span>
               </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                Sub-pixel skeleton distance-transform aperture variation along fracture length (mm vs mm)
-              </div>
             </div>
 
-            {/* Quick Metrics Summary Strip */}
-            <div style={{ display: 'flex', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
-              <div style={{ background: 'var(--surface-alt)', padding: '3px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Max: </span>
-                <strong style={{ color: maxWidthNum >= 0.4 ? 'var(--chart-bad)' : 'var(--chart-warn)', fontFamily: DesignTokens.typography.mono }}>
-                  {maxWidthNum.toFixed(2)} mm
-                </strong>
-              </div>
-              <div style={{ background: 'var(--surface-alt)', padding: '3px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Span: </span>
-                <strong style={{ color: 'var(--text-primary)', fontFamily: DesignTokens.typography.mono }}>{lengthNum.toFixed(1)} mm</strong>
-              </div>
-              <div style={{ background: 'var(--surface-alt)', padding: '3px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>ACI Limit: </span>
-                <strong style={{ color: 'var(--chart-warn)', fontFamily: DesignTokens.typography.mono }}>0.30 mm</strong>
-              </div>
-              <div style={{ background: 'var(--surface-alt)', padding: '3px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Crit Limit: </span>
-                <strong style={{ color: 'var(--chart-bad)', fontFamily: DesignTokens.typography.mono }}>0.40 mm</strong>
-              </div>
-            </div>
+            <CrackApertureProfileChart
+              primaryLengthMm={primary_length_mm}
+              primaryWidthMm={primary_width_mm}
+              height={220}
+            />
           </div>
 
-          {/* SVG Cartesian Metrology Chart */}
-          <div style={{ width: '100%', height: '220px', position: 'relative' }}>
-            <svg
-              viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-              style={{ width: '100%', height: '100%', overflow: 'visible' }}
-              preserveAspectRatio="none"
-            >
-              <defs>
-                <linearGradient id="apertureGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--chart-bad)" stopOpacity="0.28" />
-                  <stop offset="65%" stopColor="var(--chart-bad)" stopOpacity="0.06" />
-                  <stop offset="100%" stopColor="var(--chart-bad)" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-
-              {/* Shaded Hazard Background Zones */}
-              <rect
-                x={padLeft}
-                y={getYCoord(maxProfileY)}
-                width={plotW}
-                height={getYCoord(0.40) - getYCoord(maxProfileY)}
-                fill="var(--chart-bad)"
-                fillOpacity="0.035"
-              />
-              <rect
-                x={padLeft}
-                y={getYCoord(0.40)}
-                width={plotW}
-                height={getYCoord(0.30) - getYCoord(0.40)}
-                fill="var(--chart-warn)"
-                fillOpacity="0.03"
-              />
-              <rect
-                x={padLeft}
-                y={getYCoord(0.30)}
-                width={plotW}
-                height={getYCoord(0.0) - getYCoord(0.30)}
-                fill="var(--chart-good)"
-                fillOpacity="0.025"
-              />
-
-              {/* Y-Axis Horizontal Gridlines & Tick Numbers */}
-              {yTicks.map((tick, i) => {
-                const yPos = getYCoord(tick);
-                return (
-                  <g key={`y-grid-${i}`}>
-                    <line
-                      x1={padLeft}
-                      y1={yPos}
-                      x2={padLeft + plotW}
-                      y2={yPos}
-                      stroke="var(--border)"
-                      strokeWidth="1"
-                      strokeDasharray="3 3"
-                    />
-                    <text
-                      x={padLeft - 9}
-                      y={yPos + 3.5}
-                      textAnchor="end"
-                      fontSize="9.5"
-                      fill="var(--chart-label)"
-                      fontFamily={DesignTokens.typography.mono}
-                      fontWeight="500"
-                    >
-                      {tick.toFixed(2)}
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* Left Y-Axis Baseline Line */}
-              <line
-                x1={padLeft}
-                y1={padTop}
-                x2={padLeft}
-                y2={padTop + plotH}
-                stroke="var(--chart-axis)"
-                strokeWidth="1.2"
-              />
-
-              {/* Y-Axis Title */}
-              <text
-                x={14}
-                y={padTop + plotH / 2}
-                textAnchor="middle"
-                fontSize="9"
-                fill="var(--text-secondary)"
-                fontWeight="600"
-                fontFamily={DesignTokens.typography.sans}
-                letterSpacing="0.06em"
-                transform={`rotate(-90, 14, ${padTop + plotH / 2})`}
-              >
-                APERTURE (MM)
-              </text>
-
-              {/* Bottom X-Axis Baseline */}
-              <line
-                x1={padLeft}
-                y1={padTop + plotH}
-                x2={padLeft + plotW}
-                y2={padTop + plotH}
-                stroke="var(--chart-axis)"
-                strokeWidth="1.2"
-              />
-
-              {/* X-Axis Distance Ticks */}
-              {[0, 0.25, 0.5, 0.75, 1.0].map((frac, idx) => {
-                const xPos = padLeft + frac * plotW;
-                const dVal = (frac * lengthNum).toFixed(0);
-                return (
-                  <g key={`x-tick-${idx}`}>
-                    <line
-                      x1={xPos}
-                      y1={padTop + plotH}
-                      x2={xPos}
-                      y2={padTop + plotH + 4}
-                      stroke="var(--chart-axis)"
-                      strokeWidth="1"
-                    />
-                    <text
-                      x={xPos}
-                      y={padTop + plotH + 15}
-                      textAnchor="middle"
-                      fontSize="9"
-                      fill="var(--chart-label)"
-                      fontFamily={DesignTokens.typography.mono}
-                    >
-                      {dVal} mm
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* X-Axis Title */}
-              <text
-                x={padLeft + plotW / 2}
-                y={chartHeight - 4}
-                textAnchor="middle"
-                fontSize="9"
-                fill="var(--text-secondary)"
-                fontWeight="600"
-                fontFamily={DesignTokens.typography.sans}
-                letterSpacing="0.05em"
-              >
-                FRACTURE DISTANCE SPAN (MM)
-              </text>
-
-              {/* Standard Benchmark Threshold Lines */}
-              {/* 1. ACI 224R Limit (0.30mm) */}
-              <line
-                x1={padLeft}
-                y1={getYCoord(0.30)}
-                x2={padLeft + plotW}
-                y2={getYCoord(0.30)}
-                stroke="var(--chart-warn)"
-                strokeWidth="1.2"
-                strokeDasharray="4 3"
-                className="animate-threshold-line"
-              />
-              <text
-                x={padLeft + plotW - 4}
-                y={getYCoord(0.30) - 4}
-                textAnchor="end"
-                fontSize="8.5"
-                fill="var(--chart-warn)"
-                fontWeight="600"
-                fontFamily={DesignTokens.typography.mono}
-              >
-                ACI 224R (0.30 mm)
-              </text>
-
-              {/* 2. Critical Limit (0.40mm) */}
-              <line
-                x1={padLeft}
-                y1={getYCoord(0.40)}
-                x2={padLeft + plotW}
-                y2={getYCoord(0.40)}
-                stroke="var(--chart-bad)"
-                strokeWidth="1.2"
-                strokeDasharray="4 3"
-                className="animate-threshold-line"
-              />
-              <text
-                x={padLeft + plotW - 4}
-                y={getYCoord(0.40) - 4}
-                textAnchor="end"
-                fontSize="8.5"
-                fill="var(--chart-bad)"
-                fontWeight="600"
-                fontFamily={DesignTokens.typography.mono}
-              >
-                CRITICAL (0.40 mm)
-              </text>
-
-              {/* Shaded Area Fill */}
-              {profileAreaPath && (
-                <path
-                  d={profileAreaPath}
-                  fill="url(#apertureGradient)"
-                  className="animate-area-breathe"
-                />
-              )}
-
-              {/* Primary Aperture Spline Path */}
-              {profileLinePath && (
-                <path
-                  d={profileLinePath}
-                  fill="none"
-                  stroke="var(--chart-bad)"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  className="animate-chart-path"
-                />
-              )}
-
-              {/* Flowing Dash Motion Tracer */}
-              {profileLinePath && (
-                <path
-                  d={profileLinePath}
-                  fill="none"
-                  stroke="var(--chart-bad)"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  className="animate-flow-dash"
-                  opacity="0.85"
-                />
-              )}
-
-              {/* Data points along curve */}
-              {svgCoords.map((pt, i) => {
-                const isOverAci = pt.aperture_mm >= 0.30;
-                return (
-                  <circle
-                    key={`pt-${i}`}
-                    cx={pt.x}
-                    cy={pt.y}
-                    r={crosshairPos && crosshairPos.idx === i ? 4.5 : 2.5}
-                    fill={isOverAci ? 'var(--chart-bad)' : 'var(--text-primary)'}
-                    stroke="var(--surface)"
-                    strokeWidth="1"
-                    style={{ transition: 'all 0.15s ease' }}
-                  />
-                );
-              })}
-
-              {/* Crosshair Guideline Elements */}
-              {crosshairPos && (
-                <g pointerEvents="none">
-                  {/* Vertical Guide Line */}
-                  <line
-                    x1={crosshairPos.x}
-                    y1={padTop}
-                    x2={crosshairPos.x}
-                    y2={padTop + plotH}
-                    stroke="var(--text-primary)"
-                    strokeWidth="1"
-                    strokeDasharray="3 3"
-                    opacity="0.65"
-                  />
-                  {/* Horizontal Guide Line */}
-                  <line
-                    x1={padLeft}
-                    y1={crosshairPos.y}
-                    x2={padLeft + plotW}
-                    y2={crosshairPos.y}
-                    stroke="var(--text-primary)"
-                    strokeWidth="1"
-                    strokeDasharray="3 3"
-                    opacity="0.65"
-                  />
-                  {/* Snapped Target Reticle Dot */}
-                  <circle
-                    cx={crosshairPos.x}
-                    cy={crosshairPos.y}
-                    r="5"
-                    fill="var(--chart-bad)"
-                    stroke="var(--surface)"
-                    strokeWidth="2"
-                    className="animate-node-pulse"
-                  />
-                </g>
-              )}
-
-              {/* Interactive Mouse Capture Layer for 60fps Scrubber */}
-              <rect
-                x={padLeft}
-                y={padTop}
-                width={plotW}
-                height={plotH}
-                fill="transparent"
-                style={{ cursor: 'crosshair' }}
-                onMouseMove={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const mouseX = ((e.clientX - rect.left) / rect.width) * plotW + padLeft;
-                  let closest = svgCoords[0];
-                  let minDiff = Infinity;
-                  svgCoords.forEach((pt) => {
-                    const diff = Math.abs(pt.x - mouseX);
-                    if (diff < minDiff) {
-                      minDiff = diff;
-                      closest = pt;
-                    }
-                  });
-                  setCrosshairPos(closest);
-                  setHoveredProfilePoint(closest);
-                }}
-                onMouseLeave={() => {
-                  setCrosshairPos(null);
-                  setHoveredProfilePoint(null);
-                }}
-              />
-            </svg>
-
-            {/* Dynamic Floating Glassmorphism Tooltip HUD */}
-            {crosshairPos && (
-              <div
-                style={{
-                  position: 'absolute',
-                  left: `${(crosshairPos.x / chartWidth) * 100}%`,
-                  top: `${Math.max(10, (crosshairPos.y / chartHeight) * 100 - 34)}%`,
-                  transform: 'translate(-50%, -100%)',
-                  background: 'var(--chart-tooltip-bg)',
-                  backdropFilter: 'blur(8px)',
-                  color: '#FFFFFF',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
-                  pointerEvents: 'none',
-                  zIndex: 40,
-                  whiteSpace: 'nowrap',
-                  fontSize: '11px',
-                  border: '1px solid rgba(255, 255, 255, 0.15)'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                  <span style={{ fontWeight: 600, color: '#CCCCCC' }}>Pos: {crosshairPos.pt.distance_mm} mm</span>
-                  <span style={{
-                    color: crosshairPos.pt.aperture_mm >= 0.4 ? '#F87171' : (crosshairPos.pt.aperture_mm >= 0.3 ? '#FBBF24' : '#34D399'),
-                    fontWeight: 700,
-                    fontFamily: DesignTokens.typography.mono
-                  }}>
-                    {crosshairPos.pt.aperture_mm} mm
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', fontSize: '10px' }}>
-                  <span style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    background: crosshairPos.pt.aperture_mm >= 0.3 ? 'var(--accent-red)' : 'var(--accent-emerald)'
-                  }} />
-                  <span style={{ color: '#AAAAAA' }}>ACI 224R:</span>
-                  <span style={{ fontWeight: 600, color: '#FFFFFF' }}>
-                    {crosshairPos.pt.aperture_mm >= 0.3 ? 'Non-compliant (>0.30mm)' : 'Nominal tolerance'}
-                  </span>
+          {/* Right: Detected Crack Severity Distribution */}
+          <div
+            className="data-card-interactive"
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '10px',
+              padding: '18px 16px',
+              position: 'relative'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div>
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Crack Severity Distribution
+                </span>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  Defect count classified by engineering risk category
                 </div>
               </div>
-            )}
-          </div>
+              <Badge variant={primary_severity === 'CRITICAL' ? 'danger' : primary_severity === 'HIGH' ? 'warning' : 'info'}>
+                {defects.length} Fissures
+              </Badge>
+            </div>
 
-          {/* Interactive Scrub Bar & Hover Info */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            fontSize: '11px',
-            color: 'var(--text-secondary)',
-            marginTop: '12px',
-            paddingTop: '10px',
-            borderTop: '1px solid var(--border)',
-            flexWrap: 'wrap',
-            gap: '8px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '12px', height: '2px', background: 'var(--chart-bad)' }} /> Skeleton Aperture
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '12px', height: '1px', borderTop: '2px dashed var(--chart-warn)' }} /> ACI 224R (0.30mm)
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '12px', height: '1px', borderTop: '2px dashed var(--chart-bad)' }} /> Critical (0.40mm)
-              </span>
-            </div>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-              Scrub along fracture to verify sub-pixel aperture profile
-            </div>
+            <DefectSeverityBarChart
+              defects={defects}
+              height={220}
+            />
           </div>
         </div>
       )}
@@ -1017,7 +571,7 @@ export const CrackAnalysis = ({ crackData = {}, onActionComplete }) => {
         primarySeverity={primary_severity}
         primaryLengthMm={primary_length_mm}
         primaryWidthMm={primary_width_mm}
-        onSelectDefect={(id) => {
+        onSelectDefect={() => {
           setActiveView('microscope');
         }}
       />

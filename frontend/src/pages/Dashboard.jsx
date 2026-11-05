@@ -1,82 +1,48 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Navbar } from '../components/Navbar';
 import { TopCards } from '../components/TopCards';
 import { LiveInspection } from '../components/LiveInspection';
 import { CrackAnalysis } from '../components/CrackAnalysis';
-import { HealthAnalysis } from '../components/HealthAnalysis';
-import { PredictionView } from '../components/PredictionView';
-import { AlertsView } from '../components/AlertsView';
-import { ReportsView } from '../components/ReportsView';
+import { HealthAndReportsView } from '../components/HealthAndReportsView';
 import {
   Alert,
-  Badge,
   Button,
-  PageHeader,
-  SegmentedControl,
   Spinner,
   useTheme,
   useToast,
 } from '../ui';
 import {
-  IconRover,
-  IconCrosshair,
-  IconActivity,
-  IconClock,
-  IconAlert,
-  IconFileText,
-  IconRefresh,
-  IconPrinter,
-  IconCpu,
-} from '../components/UI/Icons';
+  Bot,
+  Crosshair,
+  Activity,
+  Cpu,
+  ChevronRight
+} from 'lucide-react';
 import { api } from '../services/api';
 import './Dashboard.css';
 
-const TAB_COPY = {
-  inspection: 'Real-time telemetry stream, RF link & crawler teleoperation',
-  cracks: 'ML computer vision ensemble, sub-pixel metric profiling & digital microscope',
-  health: 'Multi-parameter Structural Health Index decomposition & trend telemetry',
-  prediction: 'Prognostic degradation extrapolation, RUL forecasting & lifecycle simulation',
-  alerts: 'Critical safety threshold monitoring & engineering intervention triggers',
-  reports: 'Certified inspection dossiers & printable photogrammetric records',
-};
+const ScalaStreamView = lazy(() => import('../components/ScalaStreamView').then(m => ({ default: m.ScalaStreamView })));
+
+function getInitialTab() {
+  const hash = window.location.hash.replace(/^#\/?/, '').trim();
+  if (hash === 'scala' || hash === 'scala-stream') return 'scala_stream';
+  if (hash === 'inspection') return 'inspection';
+  if (hash === 'health' || hash === 'health-reports') return 'health_reports';
+  return 'live';
+}
 
 export const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [activeTab, setActiveTab] = useState('inspection');
+  const [activeTab, setActiveTab] = useState(getInitialTab);
   const [pollingRate, setPollingRate] = useState(3000);
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [realtimeNotification, setRealtimeNotification] = useState(null);
   const [demoRunning, setDemoRunning] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(false);
   const prevInspectionIdRef = useRef(null);
   const { theme, toggleTheme } = useTheme();
   const toast = useToast();
-
-  const playChirp = useCallback(
-    (freq = 880, duration = 0.08) => {
-      if (!soundEnabled) return;
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const audioCtx = new AudioContext();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
-      } catch {
-        // AudioContext policy-safe fallback
-      }
-    },
-    [soundEnabled]
-  );
 
   const fetchOverview = useCallback(
     async (showSyncIndicator = false) => {
@@ -85,15 +51,13 @@ export const Dashboard = () => {
         const data = await api.dashboard.getOverview();
         setDashboardData(data);
         setLastSyncTime(new Date().toLocaleTimeString());
-        playChirp(880, 0.06);
 
         const currentInspId = data?.live_inspection?.inspection_id;
         if (prevInspectionIdRef.current && currentInspId && currentInspId !== prevInspectionIdRef.current) {
           const primarySeverity = data?.crack_analysis?.primary_severity || 'INSPECTED';
           setRealtimeNotification(
-            `Real-time telemetry synced: ${primarySeverity} crack profile registered · SHI ${data?.top_cards?.health_index || 0} pts`
+            `New inspection synced: ${primarySeverity} crack profile registered · SHI ${data?.top_cards?.health_index || 0} pts`
           );
-          playChirp(1046, 0.12);
           window.setTimeout(() => setRealtimeNotification(null), 5000);
         }
         prevInspectionIdRef.current = currentInspId;
@@ -109,34 +73,51 @@ export const Dashboard = () => {
         }
       }
     },
-    [playChirp, toast]
+    [toast]
   );
 
   useEffect(() => {
-    fetchOverview(false);
-    if (pollingRate <= 0) return undefined;
+    const timer = setTimeout(() => {
+      fetchOverview(false);
+    }, 0);
+
+    if (pollingRate <= 0) {
+      return () => clearTimeout(timer);
+    }
 
     const interval = window.setInterval(() => {
       fetchOverview(false);
     }, pollingRate);
 
-    return () => window.clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      window.clearInterval(interval);
+    };
   }, [fetchOverview, pollingRate]);
 
-  const handleOpenReport = () => {
-    if (!dashboardData?.live_inspection?.inspection_id) return;
-    const url = api.reports.getHtmlUrl(dashboardData.live_inspection.inspection_id);
-    window.open(url, '_blank');
-  };
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '').trim();
+      if (hash === 'scala' || hash === 'scala-stream') {
+        setActiveTab('scala_stream');
+      } else if (hash === 'inspection') {
+        setActiveTab('inspection');
+      } else if (hash === 'health' || hash === 'health-reports') {
+        setActiveTab('health_reports');
+      } else if (hash === 'live') {
+        setActiveTab('live');
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   const handleQuickDemoScan = async () => {
     try {
       setDemoRunning(true);
-      playChirp(659, 0.08);
       await api.rover.simulateScan('HIGH');
       await fetchOverview(true);
-      playChirp(880, 0.1);
-      setActiveTab('cracks');
+      setActiveTab('inspection');
       toast.success('Synthetic HIGH-severity scan registered.', { title: 'Simulation complete' });
     } catch (err) {
       toast.error(err.message || 'The simulation could not be started.', { title: 'Simulation failed' });
@@ -151,7 +132,7 @@ export const Dashboard = () => {
         <Spinner size="lg" />
         <div>
           <div className="dash-loading__title">Synchronizing autonomous crawler telemetry</div>
-          <div className="dash-loading__subtitle">Loading ML vision models and structural health records…</div>
+          <div className="dash-loading__subtitle">Loading vision models and structural records…</div>
         </div>
       </div>
     );
@@ -169,41 +150,44 @@ export const Dashboard = () => {
   const unackAlertsCount = alerts.filter((a) => !a.is_acknowledged).length;
 
   const tabs = [
-    { id: 'inspection', label: 'Live Inspection', icon: <IconRover size={15} /> },
-    { id: 'cracks', label: 'Crack Metrology', icon: <IconCrosshair size={15} /> },
-    { id: 'health', label: 'Structural Health', icon: <IconActivity size={15} /> },
-    { id: 'prediction', label: 'RUL Prognosis', icon: <IconClock size={15} /> },
-    { id: 'alerts', label: 'Hazards & Alerts', icon: <IconAlert size={15} />, badge: unackAlertsCount || null },
-    { id: 'reports', label: 'Dossier Reports', icon: <IconFileText size={15} /> },
+    { id: 'live', label: 'Live', icon: <Bot size={15} /> },
+    { id: 'inspection', label: 'Inspection', icon: <Crosshair size={15} /> },
+    {
+      id: 'health_reports',
+      label: 'Health & Reports',
+      icon: <Activity size={15} />,
+      badge: unackAlertsCount > 0 ? unackAlertsCount : null,
+    },
+    {
+      id: 'scala_pipeline',
+      label: 'Scala Pipeline',
+      icon: <Cpu size={15} />,
+    },
   ];
-
-  const activeTabMeta = tabs.find((tab) => tab.id === activeTab);
 
   return (
     <div className="ui-app dash">
+      {/* 1. Slim, Elegant Navbar */}
       <Navbar
         roverStatus={top_cards.rover_status}
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={(tabId) => {
-          setActiveTab(tabId);
-          playChirp(587, 0.05);
+          if (tabId === 'scala_pipeline') {
+            window.location.hash = '#/scala';
+          } else {
+            setActiveTab(tabId);
+          }
         }}
-        onSync={() => {
-          playChirp(880, 0.06);
-          fetchOverview(true);
-        }}
-        onOpenReport={handleOpenReport}
-        hasReport={Boolean(live_inspection?.inspection_id)}
+        onSync={() => fetchOverview(true)}
+        isSyncing={isSyncing}
         theme={theme}
         onToggleTheme={toggleTheme}
-        soundEnabled={soundEnabled}
-        onToggleSound={() => setSoundEnabled((prev) => !prev)}
       />
 
       <main className="ui-main dash__main">
         {realtimeNotification && (
-          <Alert variant="success" title="New inspection synced" className="dash__notification">
+          <Alert variant="success" title="Telemetry updated" className="dash__notification">
             <div className="dash__notification-row">
               <span>{realtimeNotification}</span>
               <button
@@ -218,111 +202,106 @@ export const Dashboard = () => {
           </Alert>
         )}
 
-        <PageHeader
-          eyebrow={
-            <>
-              <span className="ui-live-dot" />
-              <span>
-                Autonomous crawler {pollingRate > 0 ? 'active' : 'paused'} · {live_inspection.wall_name || 'North Bearing Facade'}
-              </span>
-            </>
-          }
-          title="Autonomous Structural Health & Crack Metrology Platform"
-          description={
-            <>
-              C35/40 high-strength concrete · Optical standoff 250 mm · Vision calibration 2.50 px/mm
-              {lastSyncTime ? ` · Last sync ${lastSyncTime}` : ''}
-            </>
-          }
-          actions={
-            <div className="dash__toolbar">
-              <Button
-                variant="secondary"
-                size="sm"
-                loading={demoRunning}
-                icon={<IconCpu size={14} />}
-                onClick={handleQuickDemoScan}
-              >
-                Simulate scan
-              </Button>
-
-              <SegmentedControl
-                label="Rate"
-                ariaLabel="Telemetry polling rate"
-                value={pollingRate}
-                onChange={(value) => {
-                  setPollingRate(value);
-                  playChirp(440, 0.04);
-                }}
-                items={[
-                  { id: 1000, label: '1s' },
-                  { id: 3000, label: '3s' },
-                  { id: 5000, label: '5s' },
-                  { id: 0, label: 'Pause' },
-                ]}
-              />
-
-              <Button
-                variant="outline"
-                size="sm"
-                loading={isSyncing}
-                icon={<IconRefresh size={14} />}
-                onClick={() => fetchOverview(true)}
-              >
-                Fetch now
-              </Button>
-
-              {live_inspection.inspection_id && (
-                <Button variant="primary" size="sm" icon={<IconPrinter size={14} />} onClick={handleOpenReport}>
-                  Certified dossier
-                </Button>
-              )}
-            </div>
-          }
-        />
-
-        <TopCards data={top_cards} />
-
-        <div className="dash__modulebar">
-          <div className="dash__module">
-            <span className="dash__module-label">Active module</span>
-            <span className="dash__module-sep">/</span>
-            <span className="dash__module-name">
-              {activeTabMeta?.icon}
-              {activeTabMeta?.label}
+        {/* 2. 1 Slim Breadcrumb Header (< 44px) */}
+        <section className="dash-breadcrumb" aria-label="Current facade context">
+          <div className="dash-breadcrumb__left">
+            <span className="dash-breadcrumb__structure">
+              {live_inspection.wall_name || 'North Bearing Facade'}
             </span>
-            {unackAlertsCount > 0 && (
-              <Badge variant="danger" size="sm" dot>
-                {unackAlertsCount} open
-              </Badge>
+            <ChevronRight size={13} className="dash-breadcrumb__chevron" />
+            <span className="dash-breadcrumb__spec">C35 Concrete · Standoff 250mm · 2.50 px/mm</span>
+            <span className="dash-breadcrumb__divider">|</span>
+            <span className="dash-breadcrumb__crawler">
+              <span className="ui-live-dot" />
+              <span>ROVER-01 · {top_cards.rover_status === 'CONNECTED' ? 'Active' : top_cards.rover_status}</span>
+            </span>
+          </div>
+
+          <div className="dash-breadcrumb__right">
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={demoRunning}
+              icon={<Cpu size={13} />}
+              onClick={handleQuickDemoScan}
+            >
+              Simulate Scan
+            </Button>
+
+            <button
+              type="button"
+              className="dash-breadcrumb__rate-btn"
+              onClick={() => setPollingRate(prev => (prev === 3000 ? 1000 : prev === 1000 ? 5000 : prev === 5000 ? 0 : 3000))}
+              title="Click to toggle telemetry polling cadence"
+            >
+              Cadence: {pollingRate === 0 ? 'Paused' : `${pollingRate / 1000}s`}
+            </button>
+
+            <a
+              href="#/scala"
+              className="dash-breadcrumb__rate-btn"
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              title="Open dedicated Scala 3 / Apache Pekko live stream engine console"
+            >
+              <Cpu size={12} />
+              <span>Scala Engine (8090)</span>
+            </a>
+
+            {lastSyncTime && (
+              <span className="dash-breadcrumb__sync">
+                Synced {lastSyncTime}
+              </span>
             )}
           </div>
-          <p className="dash__module-copy">{TAB_COPY[activeTab]}</p>
-        </div>
+        </section>
 
-        <div key={activeTab} className="tab-content-enter">
-          {activeTab === 'inspection' && (
-            <LiveInspection inspectionData={live_inspection} roverData={top_cards} onActionComplete={() => fetchOverview(true)} />
+        {/* 3. 1 Slim Metric Bar (< 70px) */}
+        <TopCards data={top_cards} crackData={crack_analysis} />
+
+        {/* 4. Tab Workspace Content */}
+        <div key={activeTab} className="tab-content-enter dash-workspace">
+          {activeTab === 'live' && (
+            <LiveInspection
+              inspectionData={live_inspection}
+              roverData={top_cards}
+              onActionComplete={() => fetchOverview(true)}
+            />
           )}
 
-          {activeTab === 'cracks' && <CrackAnalysis crackData={crack_analysis} onActionComplete={() => fetchOverview(true)} />}
+          {activeTab === 'inspection' && (
+            <CrackAnalysis
+              crackData={crack_analysis}
+              onActionComplete={() => fetchOverview(true)}
+            />
+          )}
 
-          {activeTab === 'health' && <HealthAnalysis healthData={health_analysis} onActionComplete={() => fetchOverview(true)} />}
+          {activeTab === 'health_reports' && (
+            <HealthAndReportsView
+              healthData={health_analysis}
+              predictionData={prediction}
+              alerts={alerts}
+              inspectionId={live_inspection.inspection_id}
+              onActionComplete={() => fetchOverview(true)}
+            />
+          )}
 
-          {activeTab === 'prediction' && <PredictionView predictionData={prediction} onActionComplete={() => fetchOverview(true)} />}
-
-          {activeTab === 'alerts' && <AlertsView alerts={alerts} onAlertAcknowledged={() => fetchOverview(true)} />}
-
-          {activeTab === 'reports' && <ReportsView inspectionId={live_inspection.inspection_id} />}
+          {activeTab === 'scala_stream' && (
+            <Suspense fallback={<div className="p-8 text-center text-slate-400">Loading Scala Stream Engine…</div>}>
+              <ScalaStreamView
+                onActionComplete={() => fetchOverview(true)}
+              />
+            </Suspense>
+          )}
         </div>
       </main>
 
       <footer className="ui-footer">
         <div className="ui-footer__inner">
-          <span>Autonomous Crawler Inspection System · Sub-Pixel Crack Profiling · Structural Health Assessment</span>
+          <span>Agile Rover · Autonomous Structural Intelligence &amp; Metrology</span>
           <span className="dash__footer-right">
+            <a href="#/scala">Scala Stream</a>
             <a href="#/ui-kit">UI Kit</a>
-            <span>ISO 1920 / ACI 224R Compliance</span>
+            <span>ISO 1920 / ACI 224R Compliant</span>
           </span>
         </div>
       </footer>

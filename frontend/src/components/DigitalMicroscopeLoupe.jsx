@@ -3,8 +3,7 @@ import {
   IconZoomIn,
   IconZoomOut,
   IconMaximize,
-  IconCrosshair,
-  IconEye
+  IconCrosshair
 } from './UI/Icons';
 import { DesignTokens } from '../tokens';
 
@@ -12,9 +11,9 @@ export const DigitalMicroscopeLoupe = ({
   imageUrl,
   title = "Wall Surface Fracture Photogrammetry",
   pxPerMm = 2.5,
-  defects = [],
-  highlightedDefectId = null,
-  onDefectClick = null
+  defects: _defects = [],
+  highlightedDefectId: _highlightedDefectId = null,
+  onDefectClick: _onDefectClick = null
 }) => {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [loupeActive, setLoupeActive] = useState(true);
@@ -22,8 +21,25 @@ export const DigitalMicroscopeLoupe = ({
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [containerDims, setContainerDims] = useState({ width: 800, height: 400 });
 
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect) {
+          setContainerDims({
+            width: entry.contentRect.width || 800,
+            height: entry.contentRect.height || 400
+          });
+        }
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const handleMouseMove = (e) => {
     if (!containerRef.current) return;
@@ -269,11 +285,11 @@ export const DigitalMicroscopeLoupe = ({
           }}>
             {/* Magnified Image Projection */}
             <div style={{
-              width: `${containerRef.current ? containerRef.current.clientWidth * 2.6 : 800}px`,
-              height: `${containerRef.current ? containerRef.current.clientHeight * 2.6 : 800}px`,
+              width: `${containerDims.width * 2.6}px`,
+              height: `${containerDims.height * 2.6}px`,
               position: 'absolute',
-              left: `-${cursorPos.relX * (containerRef.current ? containerRef.current.clientWidth * 2.6 : 800) - 65}px`,
-              top: `-${cursorPos.relY * (containerRef.current ? containerRef.current.clientHeight * 2.6 : 800) - 65}px`,
+              left: `-${cursorPos.relX * (containerDims.width * 2.6) - 65}px`,
+              top: `-${cursorPos.relY * (containerDims.height * 2.6) - 65}px`,
             }}>
               <img
                 src={imageUrl}

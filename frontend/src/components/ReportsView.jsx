@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Badge } from './UI/Components';
-import { IconFileText, IconRefresh, IconPrinter, IconDownload, IconCheck, IconShield, IconLayers } from './UI/Icons';
+import {
+  FileText as IconFileText,
+  RefreshCw as IconRefresh,
+  Printer as IconPrinter,
+  Download as IconDownload,
+  Check as IconCheck,
+  ShieldCheck as IconShield
+} from 'lucide-react';
 import { api } from '../services/api';
 
 export const ReportsView = ({ inspectionId }) => {
@@ -8,7 +15,7 @@ export const ReportsView = ({ inspectionId }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchReport = async () => {
+  const fetchReport = useCallback(async () => {
     if (!inspectionId) return;
     try {
       setLoading(true);
@@ -21,13 +28,16 @@ export const ReportsView = ({ inspectionId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [inspectionId]);
 
   useEffect(() => {
     if (inspectionId) {
-      fetchReport();
+      const timer = setTimeout(() => {
+        fetchReport();
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [inspectionId]);
+  }, [inspectionId, fetchReport]);
 
   const handleOpenPrintable = () => {
     if (!inspectionId) return;
@@ -120,7 +130,7 @@ export const ReportsView = ({ inspectionId }) => {
             loading={loading}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            <IconRefresh size={13} spin={loading} />
+            <IconRefresh size={13} className={loading ? 'ui-spin' : ''} />
             <span>Sync Telemetry</span>
           </Button>
 
@@ -163,7 +173,7 @@ export const ReportsView = ({ inspectionId }) => {
 
       {loading && !reportData && (
         <div style={{ padding: '36px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          <IconRefresh size={24} spin color="var(--primary)" style={{ marginBottom: '8px' }} />
+          <IconRefresh size={24} className="ui-spin" color="var(--primary)" style={{ marginBottom: '8px' }} />
           <div>Compiling photogrammetric metrics and generating dossier...</div>
         </div>
       )}
@@ -201,7 +211,7 @@ export const ReportsView = ({ inspectionId }) => {
                   TIMESTAMP
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                  {reportData.metadata?.generated_at ? new Date(reportData.metadata.generated_at).toLocaleString() : new Date().toLocaleString()}
+                  {reportData.metadata?.generated_at ? new Date(reportData.metadata.generated_at).toLocaleString() : 'N/A'}
                 </div>
               </div>
               <Badge variant="success" size="sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>

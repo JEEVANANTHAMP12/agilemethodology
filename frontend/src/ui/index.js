@@ -1,5 +1,6 @@
 export { Button, Spinner } from './components/Button';
 export { Card, CardHeader, CardBody, CardFooter } from './components/Card';
+export { Reveal } from './components/Reveal';
 export { Badge } from './components/Badge';
 export { Input, Select, Textarea } from './components/Field';
 export { Checkbox, Switch } from './components/Toggle';
@@ -20,6 +21,15 @@ export { LineChart } from './charts/LineChart';
 export { BarChart } from './charts/BarChart';
 export { RadialGauge } from './charts/RadialGauge';
 export { LevelMeter } from './charts/LevelMeter';
+export {
+  ShiTrendAreaChart,
+  DegradationRadarChart,
+  RulPrognosticComposedChart,
+  CrackApertureProfileChart,
+  DefectSeverityBarChart,
+  WhatIfComparisonChart,
+  TelemetrySparkline
+} from './charts/ModernCharts';
 
 export { ThemeProvider } from './theme/ThemeProvider';
 export { useTheme } from './theme/ThemeContext';

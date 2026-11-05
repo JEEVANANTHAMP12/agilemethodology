@@ -1,0 +1,90 @@
+[debug] > Exec(early(addDefaultCommands), None, None)
+[debug] > Exec(addDefaultCommands, None, None)
+[debug] > Exec(early(initialize), None, None)
+[debug] > Exec(initialize, None, None)
+[debug] > Exec(boot, None, None)
+[debug] > Exec(writeSbtVersion, None, None)
+[debug] > Exec(reload, None, None)
+[debug] > Exec(sbtStashOnFailure, None, None)
+[debug] > Exec(onFailure loadFailed, None, None)
+[debug] > Exec(loadp, None, None)
+[info] welcome to sbt 1.10.7 (Oracle Corporation Java 21.0.12.1)
+[debug] Load.defaultLoad until apply took 106.881ms
+[debug]           Load.loadUnit: plugins took 70.3677ms
+[debug]           Load.loadUnit: defsScala took 0.2792ms
+[debug] [Loading] Scanning directory C:\project\agile\scala-telemetry-service\project
+[debug] [Loading] Found non-root projects 
+[debug] [Loading] Done in C:\project\agile\scala-telemetry-service\project, returning: ()
+[debug] deducing auto plugins based on known facts Set(Atom(sbt.plugins.CorePlugin)) and clauses Clauses(Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.IvyPlugin)))
+[debug] Clause(Atom(sbt.ScriptedPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.SbtPlugin),Set(Atom(sbt.ScriptedPlugin)))
+[debug] Clause(Atom(sbt.plugins.SemanticdbPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.JUnitXmlReportPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.MiniDependencyTreePlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.CorePlugin),Set(Atom(sbt.plugins.IvyPlugin)))
+[debug] Clause(Atom(sbt.plugins.IvyPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.SemanticdbPlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.JUnitXmlReportPlugin)))
+[debug] Clause(Atom(sbt.plugins.CorePlugin),Set(Atom(sbt.plugins.Giter8TemplatePlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.MiniDependencyTreePlugin))))
+[debug]   :: deduced result: Matched(sbt.plugins.CorePlugin,sbt.plugins.Giter8TemplatePlugin,sbt.plugins.IvyPlugin,sbt.plugins.JvmPlugin,sbt.plugins.MiniDependencyTreePlugin,sbt.plugins.JUnitXmlReportPlugin,sbt.plugins.SemanticdbPlugin)
+[debug] Plugins.deducer#function took 21.2635 ms
+[debug]               Load.resolveProject(scala-telemetry-service-build) took 35.8405ms
+[debug]             Load.loadTransitive: finalizeProject(Project(id scala-telemetry-service-build, base: C:\project\agile\scala-telemetry-service\project, plugins: List(<none>))) took 79.7657ms
+[debug] [Loading] Done in C:\project\agile\scala-telemetry-service\project, returning: (scala-telemetry-service-build)
+[debug]           Load.loadUnit: loadedProjectsRaw took 100.3441ms
+[debug]           Load.loadUnit: cleanEvalClasses took 0.3326ms
+[debug]         Load.loadUnit(file:/C:/project/agile/scala-telemetry-service/project/, ...) took 177.6452ms
+[debug]       Load.apply: load took 328.1406ms
+[debug]       Load.apply: resolveProjects took 4.0826ms
+[debug]       Load.apply: finalTransforms took 50.7594ms
+[debug]       Load.apply: config.delegates took 9.3752ms
+[debug]       Load.apply: Def.make(settings)... took 301.9708ms
+[debug]       Load.apply: structureIndex took 70.3797ms
+[debug]       Load.apply: mkStreams took 1.2842ms
+[info] loading project definition from C:\project\agile\scala-telemetry-service\project
+[debug] Running task... Cancel: Signal, check cycles: false, forcegc: true
+[debug]     Load.loadUnit: plugins took 1391.0557ms
+[debug]     Load.loadUnit: defsScala took 0.0029ms
+[debug] [Loading] Scanning directory C:\project\agile\scala-telemetry-service
+[debug]       Load.loadUnit: mkEval took 3.4485ms
+[debug] [Loading] Found non-root projects 
+[debug] [Loading] Done in C:\project\agile\scala-telemetry-service, returning: ()
+[debug] deducing auto plugins based on known facts Set(Atom(sbt.plugins.CorePlugin)) and clauses Clauses(Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.IvyPlugin)))
+[debug] Clause(Atom(sbt.ScriptedPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.SbtPlugin),Set(Atom(sbt.ScriptedPlugin)))
+[debug] Clause(Atom(sbt.plugins.SemanticdbPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.JUnitXmlReportPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.MiniDependencyTreePlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.CorePlugin),Set(Atom(sbt.plugins.IvyPlugin)))
+[debug] Clause(Atom(sbt.plugins.IvyPlugin),Set(Atom(sbt.plugins.JvmPlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.SemanticdbPlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.JUnitXmlReportPlugin)))
+[debug] Clause(Atom(sbt.plugins.CorePlugin),Set(Atom(sbt.plugins.Giter8TemplatePlugin)))
+[debug] Clause(Atom(sbt.plugins.JvmPlugin),Set(Atom(sbt.plugins.MiniDependencyTreePlugin))))
+[debug]   :: deduced result: Matched(sbt.plugins.CorePlugin,sbt.plugins.Giter8TemplatePlugin,sbt.plugins.IvyPlugin,sbt.plugins.JvmPlugin,sbt.plugins.MiniDependencyTreePlugin,sbt.plugins.JUnitXmlReportPlugin,sbt.plugins.SemanticdbPlugin)
+[debug] Plugins.deducer#function took 2.4911 ms
+[info] loading settings for project scala-telemetry-service from build.sbt...
+[debug]         Load.resolveProject(scala-telemetry-service) took 5.9718ms
+[debug]       Load.loadTransitive: finalizeProject(Project(id scala-telemetry-service, base: C:\project\agile\scala-telemetry-service, plugins: List(<none>))) took 9.1403ms
+[debug] [Loading] Done in C:\project\agile\scala-telemetry-service, returning: (scala-telemetry-service)
+[debug]     Load.loadUnit: loadedProjectsRaw took 134.0417ms
+[debug]     Load.loadUnit: cleanEvalClasses took 15.6385ms
+[debug]   Load.loadUnit(file:/C:/project/agile/scala-telemetry-service/, ...) took 1543.0165ms
+[debug] Load.apply: load took 1579.8732ms
+[debug] Load.apply: resolveProjects took 0.1378ms
+[debug] Load.apply: finalTransforms took 8.8646ms
+[debug] Load.apply: config.delegates took 0.349ms
+[debug] Load.apply: Def.make(settings)... took 89.802ms
+[debug] Load.apply: structureIndex took 21.1341ms
+[debug] Load.apply: mkStreams took 0.0021ms
+[info] set current project to agile-rover-telemetry-stream (in build file:/C:/project/agile/scala-telemetry-service/)
+[debug] > Exec(sbtPopOnFailure, None, None)
+[debug] > Exec(resumeFromFailure, None, None)
+[debug] > Exec(notifyUsersAboutShell, None, None)
+[debug] > Exec(iflast shell, None, None)
+[debug] > Exec(run, None, None)
+[debug] Evaluating tasks: Compile / run
+[debug] Running task... Cancel: Signal, check cycles: false, forcegc: true
+[info] compiling 1 Scala source to C:\project\agile\scala-telemetry-service\target\scala-3.3.3\classes ...
+[info] done compiling

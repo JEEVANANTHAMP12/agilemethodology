@@ -1,23 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Badge, Button } from './UI/Components';
+import { Badge } from './UI/Components';
 import {
-  IconRover,
-  IconCompass,
-  IconArrowUp,
-  IconArrowDown,
-  IconArrowLeft,
-  IconArrowRight,
-  IconSquare,
-  IconActivity,
-  IconWifi
-} from './UI/Icons';
+  ArrowUp as IconArrowUp,
+  ArrowDown as IconArrowDown,
+  ArrowLeft as IconArrowLeft,
+  ArrowRight as IconArrowRight,
+  Square as IconSquare
+} from 'lucide-react';
 import { DesignTokens } from '../tokens';
 
 export const RoverTeleopPad = ({
-  roverCode = 'ROVER-01',
+  roverCode: _roverCode = 'ROVER-01',
   roverStatus = 'CONNECTED',
-  batteryPercentage = 95,
-  wifiSignal = -54,
+  batteryPercentage: _batteryPercentage = 95,
+  wifiSignal: _wifiSignal = -54,
   onCommand
 }) => {
   const [activeDirection, setActiveDirection] = useState(null);

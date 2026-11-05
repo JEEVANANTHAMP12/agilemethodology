@@ -22,7 +22,8 @@ def predict_inspection_rul(inspection_id: int, db: Session = Depends(get_db)):
 
     wall = db.query(Wall).filter(Wall.id == health_result.wall_id).first()
     building = db.query(Building).filter(Building.id == wall.building_id).first() if wall else None
-    building_age = max(1, 2026 - (building.construction_year if building else 2010))
+    building_year = int(building.construction_year) if (building and building.construction_year is not None) else 2010
+    building_age = max(1, 2026 - building_year)
 
     # Look up prior health scores for regression
     prior_healths = db.query(HealthResult).filter(
@@ -30,12 +31,12 @@ def predict_inspection_rul(inspection_id: int, db: Session = Depends(get_db)):
         HealthResult.inspection_id < inspection_id
     ).order_by(HealthResult.evaluated_at.asc()).all()
 
-    history = [{"shi_score": ph.shi_score} for ph in prior_healths]
+    history = [{"shi_score": float(ph.shi_score)} for ph in prior_healths if ph.shi_score is not None]
 
     pred = rul_predictor.predict_rul(
-        current_shi=health_result.shi_score,
+        current_shi=float(health_result.shi_score),
         previous_shi_history=history,
-        building_age_years=building_age
+        building_age_years=int(building_age)
     )
 
     rul_rec = db.query(RulPrediction).filter(RulPrediction.health_result_id == health_result.id).first()

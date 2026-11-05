@@ -1,8 +1,14 @@
 import logging
+import sys
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Ensure backend root directory is in sys.path
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 from app.api.alert_routes import router as alert_router
 
@@ -17,6 +23,7 @@ from app.api.rover_routes import router as rover_router
 from app.api.rul_routes import router as rul_router
 from app.api.shi_routes import router as shi_router
 from app.api.structure_routes import router as structure_router
+from app.api.telemetry_routes import router as telemetry_router
 from app.config import settings
 from app.core.security import hash_password
 from app.database import Base, SessionLocal, engine, get_db
@@ -43,6 +50,26 @@ logger = logging.getLogger("RoverBackend")
 
 def seed_initial_data():
     """Initializes tables and seeds baseline records if needed."""
+    # 0. Check and initialize MongoDB collections if MongoDB is target engine
+    if settings.DB_TYPE.lower() == "mongodb":
+        try:
+            from app.mongodb import ensure_mongo_indexes, seed_mongo_data, is_mongo_connected
+            if is_mongo_connected():
+                logger.info(f"Active primary database: MongoDB ('{settings.MONGO_DB}'). Initializing schemas...")
+                ensure_mongo_indexes()
+                seed_mongo_data()
+                sqlite_file = Path(__file__).resolve().parent.parent / "structural_rover.db"
+                if sqlite_file.exists():
+                    try:
+                        from migrate_to_mongodb import migrate_sqlite_to_mongodb
+                        migrate_sqlite_to_mongodb()
+                    except Exception as mig_err:
+                        logger.info(f"MongoDB auto-sync notice: {mig_err}")
+            else:
+                logger.warning(f"MongoDB configured as primary ('{settings.MONGO_DB}'), but server not connected yet.")
+        except Exception as mongo_err:
+            logger.warning(f"MongoDB bootstrap notice: {mongo_err}")
+
     db = SessionLocal()
     try:
         # 1. Create tables
@@ -216,6 +243,7 @@ app.include_router(alert_router, prefix=settings.API_V1_STR)
 app.include_router(report_router, prefix=settings.API_V1_STR)
 app.include_router(structure_router, prefix=settings.API_V1_STR)
 app.include_router(dashboard_router, prefix=settings.API_V1_STR)
+app.include_router(telemetry_router, prefix=settings.API_V1_STR)
 
 # System Health Check Endpoint
 @app.get("/health", tags=["System"])
@@ -240,14 +268,33 @@ def health_check(db: Session = Depends(get_db)):
 
     rover = db.query(Rover).first()
 
+    scala_ok = False
+    scala_details = {"url": settings.SCALA_TELEMETRY_URL}
+    try:
+        import httpx
+        with httpx.Client(timeout=1.0) as client:
+            resp = client.get(f"{settings.SCALA_TELEMETRY_URL}/health")
+            if resp.status_code == 200:
+                scala_ok = True
+                scala_details = resp.json()
+    except Exception as exc:
+        scala_details["error"] = str(exc)
+
     return {
         "status": "ONLINE" if (db_ok and storage_ok) else "DEGRADED",
         "system": settings.PROJECT_NAME,
         "version": "2.4.0",
         "database": {
             "status": "HEALTHY" if db_ok else "UNHEALTHY",
+            "active_engine": settings.DB_TYPE,
+            "target_database": settings.MONGO_DB if settings.DB_TYPE.lower() == "mongodb" else settings.MYSQL_DB,
             "dialect": engine.dialect.name,
             "detail": db_msg
+        },
+        "scala_stream_engine": {
+            "status": "UP" if scala_ok else "OFFLINE",
+            "url": settings.SCALA_TELEMETRY_URL,
+            "details": scala_details
         },
         "storage": {
             "status": "HEALTHY" if storage_ok else "ERROR",
@@ -261,6 +308,36 @@ def health_check(db: Session = Depends(get_db)):
             "battery_percentage": rover.battery_percentage if rover else 0.0
         },
         "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+@app.get(f"{settings.API_V1_STR}/db/status", tags=["System"])
+def database_status():
+    """Returns runtime database configuration and collection statistics."""
+    from app.mongodb import ALL_COLLECTIONS, get_mongo_db, is_mongo_connected
+    mongo_ok = is_mongo_connected()
+    collections_stat = {}
+    if mongo_ok:
+        try:
+            m_db = get_mongo_db()
+            if m_db is not None:
+                for c in ALL_COLLECTIONS:
+                    collections_stat[c] = m_db[c].count_documents({})
+        except Exception:
+            pass
+
+    return {
+        "configured_engine": settings.DB_TYPE,
+        "database_name": settings.MONGO_DB if settings.DB_TYPE.lower() == "mongodb" else settings.MYSQL_DB,
+        "mongodb": {
+            "connected": mongo_ok,
+            "target_database": settings.MONGO_DB,
+            "host": f"{settings.MONGO_HOST}:{settings.MONGO_PORT}",
+            "collections": collections_stat
+        },
+        "sql_engine": {
+            "dialect": engine.dialect.name,
+            "url": str(engine.url)
+        }
     }
 
 # Mount static directory for backend assets if present

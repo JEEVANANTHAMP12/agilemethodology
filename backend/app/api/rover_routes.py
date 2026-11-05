@@ -43,6 +43,8 @@ def get_rover_status(rover_code: str = "ROVER-01", db: Session = Depends(get_db)
     Returns live connection, battery, Wi-Fi RSSI and operational status of Rover.
     """
     rover = RoverService.get_status(db, rover_code)
+    if not rover:
+        raise HTTPException(status_code=404, detail="Rover not found")
     active_insp = db.query(Inspection).filter(
         Inspection.rover_id == rover.id,
         Inspection.status.in_(["STARTED", "IN_PROGRESS"])
@@ -68,4 +70,24 @@ def update_telemetry(data: RoverTelemetryUpdate, db: Session = Depends(get_db)):
     rover.last_seen_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(rover)
+
+    # Relay telemetry packet to Scala reactive stream pipeline
+    try:
+        from app.config import settings
+        import httpx
+        sample = {
+            "roverCode": rover.rover_code,
+            "batteryPercentage": rover.battery_percentage,
+            "wifiSignalDbm": rover.wifi_signal_dbm or -54,
+            "ambientTempC": 26.5,
+            "humidityPct": 54.0,
+            "roverTiltDeg": 1.2,
+            "vibrationLevel": 0.08,
+            "standoffDistanceMm": 250.0
+        }
+        with httpx.Client(timeout=0.5) as client:
+            client.post(f"{settings.SCALA_TELEMETRY_URL}/api/v1/telemetry/ingest", json=sample)
+    except Exception:
+        pass
+
     return {"message": "Telemetry updated", "rover_code": rover.rover_code}

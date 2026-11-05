@@ -40,7 +40,7 @@ class RoverService:
         return rover
 
     @staticmethod
-    def get_status(db: Session, rover_code: str = "ROVER-01") -> Rover | None:
+    def get_status(db: Session, rover_code: str = "ROVER-01") -> Rover:
         rover = db.query(Rover).filter(Rover.rover_code == rover_code).first()
         if not rover:
             # Create a default registered rover if not present

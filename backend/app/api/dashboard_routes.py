@@ -22,6 +22,8 @@ from app.services.shi_engine import SHIEngine
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from typing import Any, Literal
+
 router = APIRouter(prefix="/dashboard", tags=["Dashboard Aggregation"])
 
 @router.get("/overview")
@@ -78,7 +80,7 @@ def get_dashboard_overview(db: Session = Depends(get_db)):
         if h:
             historical_trend.append({
                 "inspection_code": insp.inspection_code,
-                "date": insp.start_time.strftime("%b %d, %H:%M") if insp.start_time else "Recent",
+                "date": insp.start_time.strftime("%b %d, %H:%M") if insp.start_time is not None else "Recent",
                 "shi_score": h.shi_score,
                 "health_status": h.health_status,
                 "rul_years": r.estimated_rul_years if r else None
@@ -114,14 +116,14 @@ def get_dashboard_overview(db: Session = Depends(get_db)):
             "has_image": latest_image is not None,
             "image_id": latest_image.id if latest_image else None,
             "original_url": f"/api/images/file/original/{latest_image.original_path}" if latest_image else None,
-            "processed_url": f"/api/images/file/processed/{latest_image.processed_path}" if latest_image and latest_image.processed_path else None,
-            "heatmap_url": f"/api/images/file/processed/{latest_image.processed_path.replace('_proc_', '_heat_')}" if (latest_image and latest_image.processed_path and (settings.PROCESSED_DIR / latest_image.processed_path.replace('_proc_', '_heat_')).exists()) else None,
+            "processed_url": f"/api/images/file/processed/{latest_image.processed_path}" if (latest_image and latest_image.processed_path is not None) else None,
+            "heatmap_url": f"/api/images/file/processed/{str(latest_image.processed_path).replace('_proc_', '_heat_')}" if (latest_image and latest_image.processed_path is not None and (settings.PROCESSED_DIR / str(latest_image.processed_path).replace('_proc_', '_heat_')).exists()) else None,
             "total_defects": len(defects),
             "primary_severity": defects[0].severity if defects else "NONE",
             "primary_length_mm": defects[0].length_mm if defects else 0.0,
             "primary_width_mm": defects[0].max_width_mm if defects else 0.0,
-            "confidence_percentage": round(float(defects[0].confidence * 100), 1) if defects else 96.5,
-            "crack_probability": round(float(defects[0].confidence), 3) if defects else 0.0,
+            "confidence_percentage": round(float(defects[0].confidence or 0.965) * 100, 1) if defects else 96.5,
+            "crack_probability": round(float(defects[0].confidence or 0.0), 3) if defects else 0.0,
             "aci_224r_compliant": (defects[0].max_width_mm <= 0.30) if defects else True,
             "ml_model_version": "2.4.0-Ensemble-GB-RF",
             "defects": [
@@ -158,14 +160,14 @@ def get_dashboard_overview(db: Session = Depends(get_db)):
                 "title": a.title,
                 "message": a.message,
                 "is_acknowledged": a.is_acknowledged,
-                "created_at": a.created_at.isoformat() if a.created_at else None
+                "created_at": a.created_at.isoformat() if a.created_at is not None else None
             } for a in alerts
         ]
     }
 
 @router.post("/simulate-scan")
 def simulate_rover_scan(
-    crack_severity: str = Query("MODERATE", enum=["NONE", "LOW", "MODERATE", "HIGH", "CRITICAL"]),
+    crack_severity: Literal["NONE", "LOW", "MODERATE", "HIGH", "CRITICAL"] = Query("MODERATE"),
     wall_id: int = Query(None),
     db: Session = Depends(get_db)
 ):
@@ -181,9 +183,14 @@ def simulate_rover_scan(
     7. Computes Remaining Useful Life (RUL)
     8. Fires safety and maintenance alerts
     """
-    rover = RoverService.get_status(db, "ROVER-01")
+    rover: Any = RoverService.get_status(db, "ROVER-01")
+    if not rover:
+        rover = RoverService.connect_rover(db, "ROVER-01")
+    assert rover is not None, "Rover record must be initialized"
+
     rover.status = "INSPECTING"
-    rover.battery_percentage = max(10.0, rover.battery_percentage - 1.5)
+    current_battery = float(rover.battery_percentage) if rover.battery_percentage is not None else 95.0
+    rover.battery_percentage = max(10.0, current_battery - 1.5)
     rover.last_seen_at = datetime.now(timezone.utc)
 
     # Get or create building and wall
@@ -218,10 +225,12 @@ def simulate_rover_scan(
         db.commit()
         db.refresh(wall)
 
+    assert wall is not None, "Wall record must be initialized"
+
     # Start inspection
     date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
     code = f"INSP-{date_str}-{random.randint(100, 999)}"
-    inspection = Inspection(
+    inspection: Any = Inspection(
         wall_id=wall.id,
         rover_id=rover.id,
         inspection_code=code,
@@ -285,29 +294,29 @@ def simulate_rover_scan(
 
     # Calculate SHI
     building = db.query(Building).filter(Building.id == wall.building_id).first()
-    building_year = building.construction_year if building else 2010
+    building_year = int(building.construction_year) if (building and building.construction_year is not None) else 2010
 
     # Prior SHI history for wall
     prior_healths = db.query(HealthResult).filter(HealthResult.wall_id == wall.id).all()
-    prior_scores = [p.shi_score for p in prior_healths]
+    prior_scores: list[float] = [float(p.shi_score) for p in prior_healths if p.shi_score is not None]
 
     shi_eng = SHIEngine()
-    telemetry = {
-        "ambient_temp_c": inspection.ambient_temp_c,
-        "humidity_pct": inspection.humidity_pct,
-        "rover_tilt_deg": inspection.rover_tilt_deg,
-        "vibration_level": inspection.vibration_level
+    telemetry: dict[str, float] = {
+        "ambient_temp_c": float(inspection.ambient_temp_c or 25.0),
+        "humidity_pct": float(inspection.humidity_pct or 55.0),
+        "rover_tilt_deg": float(inspection.rover_tilt_deg or 1.0),
+        "vibration_level": float(inspection.vibration_level or 0.1)
     }
     shi_result = shi_eng.calculate_shi(
-        defects=[{"length_mm": d.length_mm, "max_width_mm": d.max_width_mm, "severity": d.severity} for d in defect_records],
+        defects=[{"length_mm": float(d.length_mm or 0.0), "max_width_mm": float(d.max_width_mm or 0.0), "severity": str(d.severity)} for d in defect_records],
         building_construction_year=building_year,
         inspection_telemetry=telemetry,
         previous_shi_scores=prior_scores
     )
 
     health_rec = HealthResult(
-        inspection_id=inspection.id,
-        wall_id=wall.id,
+        inspection_id=int(inspection.id),
+        wall_id=int(wall.id),
         shi_score=shi_result["shi_score"],
         health_status=shi_result["health_status"],
         crack_penalty=shi_result["crack_penalty"],
@@ -323,14 +332,14 @@ def simulate_rover_scan(
     # RUL Prediction
     rul_pred = RULPredictor()
     rul_out = rul_pred.predict_rul(
-        current_shi=health_rec.shi_score,
+        current_shi=float(health_rec.shi_score),
         previous_shi_history=[{"shi_score": s} for s in prior_scores],
-        building_age_years=max(1, 2026 - building_year)
+        building_age_years=int(max(1, 2026 - building_year))
     )
 
     rul_rec = RulPrediction(
-        health_result_id=health_rec.id,
-        wall_id=wall.id,
+        health_result_id=int(health_rec.id),
+        wall_id=int(wall.id),
         current_shi=rul_out["current_shi"],
         previous_shi=rul_out["previous_shi"],
         estimated_rul_years=rul_out["estimated_rul_years"],
@@ -348,7 +357,7 @@ def simulate_rover_scan(
     # Alerts
     AlertManager.evaluate_inspection_alerts(
         db,
-        inspection_id=inspection.id,
+        inspection_id=int(inspection.id),
         defects=defect_records,
         health_result=health_rec,
         rul_prediction=rul_rec
@@ -357,7 +366,8 @@ def simulate_rover_scan(
     # Mark completed
     inspection.status = "COMPLETED"
     inspection.end_time = datetime.now(timezone.utc)
-    rover.status = "CONNECTED"
+    if rover is not None:
+        rover.status = "CONNECTED"
     db.commit()
 
     return {

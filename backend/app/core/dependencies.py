@@ -32,7 +32,7 @@ def get_current_user(
     if inspector:
         return inspector
 
-    first_user = db.query(User).filter(User.is_active == True).first()
+    first_user = db.query(User).filter(User.is_active.is_(True)).first()
     if first_user:
         return first_user
 

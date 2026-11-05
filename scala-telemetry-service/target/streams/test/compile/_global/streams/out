@@ -1,0 +1,10 @@
+[error] -- [E040] Syntax Error: C:\project\agile\scala-telemetry-service\src\test\scala\agile\rover\TelemetrySpec.scala:136:0 
+[error] 136 |
+[error]     |^
+[error]     |'}' expected, but eof found
+[warn] -- Warning: C:\project\agile\scala-telemetry-service\src\test\scala\agile\rover\TelemetrySpec.scala:115:2 
+[warn] 115 |  test("TelemetryStreamPipeline detects low battery and thermal overheat anomalies") {
+[warn]     |  ^
+[warn]     |  Line is indented too far to the left, or a `}` is missing
+[warn] one warning found
+[error] one error found

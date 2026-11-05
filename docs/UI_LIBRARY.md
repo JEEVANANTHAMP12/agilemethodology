@@ -23,13 +23,15 @@ frontend/src/ui/
 ├── index.js                  # public barrel
 ├── styles/
 │   ├── tokens.css            # primitive + semantic tokens, dark/light themes
-│   ├── base.css              # reset, app shell, layout, responsive, motion
+│   ├── base.css              # reset, app shell, layout, responsive
 │   ├── components.css        # primitives and component states
 │   ├── charts.css            # chart frames, axes, gauges, bars
+│   ├── motion.css            # reveal classes, keyframes, tab choreography
 │   └── index.css             # style entry point
 ├── components/
 │   ├── Button.jsx            # Button, Spinner
 │   ├── Card.jsx              # Card, CardHeader, CardBody, CardFooter
+│   ├── Reveal.jsx            # viewport-triggered entrance wrapper
 │   ├── Badge.jsx
 │   ├── Field.jsx             # Input, Select, Textarea
 │   ├── Toggle.jsx            # Checkbox, Switch
@@ -77,6 +79,7 @@ import {
   DataTable,
   LineChart,
   RadialGauge,
+  Reveal,
   useToast,
   useTheme,
 } from '../ui';
@@ -143,13 +146,14 @@ Theme-aware roles:
 | Canvas / surface | `--canvas`, `--canvas-elevated`, `--surface`, `--surface-alt`, `--surface-raised`, `--surface-hover` |
 | Text | `--text-primary`, `--text-secondary`, `--text-muted`, `--text-inverse`, `--text-on-accent` |
 | Borders | `--border`, `--border-subtle`, `--border-strong`, `--border-focus` |
-| Accents | `--accent-primary`, `--accent-cyan`, `--accent-emerald`, `--accent-amber`, `--accent-red`, `--accent-violet` |
+| Accents | `--accent-primary`, `--accent-secondary`, `--accent-cyan`, `--accent-emerald`, `--accent-amber`, `--accent-red` |
 | Pastels | `--pastel-red-bg/text/border`, `--pastel-green-*`, `--pastel-yellow-*`, `--pastel-blue-*` |
 | Charts | `--chart-accent`, `--chart-info`, `--chart-good`, `--chart-warn`, `--chart-bad`, `--chart-grid`, `--chart-axis`, `--chart-label`, `--chart-tooltip-bg` |
 | Spacing | `--space-1` … `--space-12` |
 | Radius | `--radius-xs`, `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl`, `--radius-pill` |
-| Typography | `--font-sans`, `--font-display`, `--font-mono`, `--text-2xs` … `--text-3xl` |
-| Motion | `--duration-fast`, `--duration-base`, `--duration-slow`, `--ease-out`, `--ease-spring` |
+| Typography | `--font-sans` (Aptos), `--font-display` (Bahnschrift), `--font-mono` (Cascadia Code), `--text-2xs` … `--text-3xl` |
+| Elevation | `--shadow-subtle`, `--shadow-hover`, `--shadow-pop`, `--shadow-glow`, `--shadow-float` |
+| Motion | `--duration-fast`, `--duration-base`, `--duration-slow`, `--duration-slower`, `--ease-out`, `--ease-in-out`, `--ease-spring`, `--reveal-distance` |
 
 ### Legacy aliases
 
@@ -191,7 +195,30 @@ The token file also defines aliases used by older panels (`--border-subtle`, `--
 - `variant`: `default`, `flat`, `elevated`, `glass`, `accent`
 - `padding`: `none`, `sm`, `md`, `lg`
 - `interactive`, `as`, `className`, `style`
+- `spotlight` — tracks the pointer and paints a soft accent radial highlight behind the card content. Used on the dashboard KPI cards; pair with `interactive` when the whole card is clickable.
 - Composable `Card.Header`, `Card.Body`, `Card.Footer`.
+
+```jsx
+<Card spotlight interactive title="Structural Health">
+  …
+</Card>
+```
+
+### Reveal
+
+```jsx
+<Reveal delay={80}>
+  <Card title="Recent inspections">…</Card>
+</Reveal>
+```
+
+- `as` — element/component to render (default `div`).
+- `delay` — stagger in milliseconds.
+- `once` — reveal once and stop observing (default `true`); set `false` to re-hide when it leaves the viewport.
+- `threshold` — intersection ratio required before revealing (default `0.14`).
+- `className`, `style`, and native props are forwarded.
+
+`Reveal` adds `ui-reveal` and toggles `is-visible`. It uses `IntersectionObserver` with an above-the-fold timer and a scroll/resize bounds fallback, so content is never left hidden if observer ticks are throttled. When `prefers-reduced-motion: reduce` is set, the content renders visible immediately with no transform.
 
 ### Badge
 
@@ -461,8 +488,10 @@ formatNumber(1234.5, 1);             // "1,234.5"
 - State classes use `is-*` (`is-active`, `is-invalid`, `is-open`).
 - Modifiers use `ui-block--modifier` (`ui-btn--primary`, `ui-card--elevated`).
 - Layout helpers: `ui-grid`, `ui-grid--auto`, `ui-stack`, `ui-row`, `ui-toolbar`, `ui-muted`, `ui-text-sm`, `ui-hide`, `ui-hide-sm`.
+- Motion helpers: `ui-reveal` / `is-visible` (used by `Reveal`), `ui-animate-rise`, `ui-animate-fade`, `ui-animate-scale`, and `ui-stagger` for choreographed children.
 - Never hardcode a colour in a feature component. Use a semantic token or a chart token.
 - Prefer library primitives over new inline styles. Inline styles are acceptable only for dynamic geometry or one-off data visualisation.
+- Animate `transform` and `opacity` only; avoid layout-triggering properties in keyframes.
 
 ---
 
@@ -473,7 +502,8 @@ formatNumber(1234.5, 1);             // "1,234.5"
 - Toasts use `role="status"` and `aria-live="polite"`.
 - Charts expose `role="img"` with descriptive `aria-label`s.
 - `:focus-visible` rings are defined globally.
-- `prefers-reduced-motion` reduces animations and transitions.
+- `prefers-reduced-motion` reduces animations and transitions. `Reveal` renders visible immediately, and the `motion.css` keyframes are disabled.
+- Scroll-driven `animation-timeline: view()` effects are wrapped in `@supports` and degrade to static content.
 
 ---
 
@@ -486,6 +516,7 @@ The UI Kit page at `frontend/src/pages/UiKit.jsx` demonstrates:
 - Cards, stats, progress, tables, alerts
 - Sparkline, line chart, bar chart, radial gauge, level meter
 - Modal and toast interactions
+- Scroll reveals, staggered KPI entrance, and spotlight cards
 - Theme switching
 
 Open it with:

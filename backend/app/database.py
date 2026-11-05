@@ -38,9 +38,30 @@ def ensure_mysql_database(db_url: str):
     except Exception as e:
         logger.warning(f"Notice on MySQL auto-create: {e}")
 
-# Verify database connectivity and fallback to SQLite if MySQL is offline
-db_url = settings.DATABASE_URL
-if settings.DB_TYPE.lower() == "mysql":
+# Verify database connectivity and configure target engine
+db_type = settings.DB_TYPE.lower()
+
+if db_type == "mongodb":
+    logger.info(f"Target Primary Database Engine: MongoDB (Database: '{settings.MONGO_DB}')")
+    try:
+        from app.mongodb import ensure_mongo_indexes, get_mongo_client, is_mongo_connected
+        if is_mongo_connected():
+            logger.info(f"Connected to MongoDB server. Primary database '{settings.MONGO_DB}' is verified and active.")
+            ensure_mongo_indexes()
+        else:
+            logger.warning(f"Notice: MongoDB server at {settings.MONGO_HOST}:{settings.MONGO_PORT} is not yet reached.")
+    except Exception as mongo_err:
+        logger.warning(f"MongoDB initialization notice: {mongo_err}")
+
+    # Initialize local SQLite engine for SQLAlchemy compatibility layer
+    sqlite_path = ROOT_DIR / "structural_rover.db"
+    engine = create_engine(
+        f"sqlite:///{sqlite_path}",
+        connect_args={"check_same_thread": False},
+        pool_pre_ping=True
+    )
+elif db_type == "mysql":
+    db_url = settings.DATABASE_URL
     ensure_mysql_database(db_url)
     # Test if connection can actually be established
     try:
@@ -66,7 +87,7 @@ if settings.DB_TYPE.lower() == "mysql":
         )
 else:
     engine = create_engine(
-        db_url,
+        f"sqlite:///{ROOT_DIR / 'structural_rover.db'}",
         connect_args={"check_same_thread": False},
         pool_pre_ping=True
     )

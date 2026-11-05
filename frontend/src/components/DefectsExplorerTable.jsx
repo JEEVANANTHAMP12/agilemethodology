@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import { Badge, Button } from './UI/Components';
 import {
-  IconCrosshair,
   IconDownload,
-  IconCheck,
-  IconAlert,
   IconEye
 } from './UI/Icons';
 import { DesignTokens } from '../tokens';
@@ -18,7 +15,6 @@ export const DefectsExplorerTable = ({
   selectedDefectId
 }) => {
   const [filterSeverity, setFilterSeverity] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
 
   // If defects array is empty but we have primary metrics, create specimen record
   const effectiveDefects = defects.length > 0 ? defects : (
@@ -44,11 +40,9 @@ export const DefectsExplorerTable = ({
     return 'success';
   };
 
-  const filtered = effectiveDefects.filter(d => {
-    const matchesSev = filterSeverity === 'ALL' || d.severity === filterSeverity;
-    const matchesSearch = !searchQuery || (d.defect_code || `DEF-${d.id}`).toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSev && matchesSearch;
-  });
+  const filtered = effectiveDefects.filter(d => (
+    filterSeverity === 'ALL' || d.severity === filterSeverity
+  ));
 
   const exportCsv = () => {
     if (effectiveDefects.length === 0) return;
@@ -182,7 +176,6 @@ export const DefectsExplorerTable = ({
             <tbody>
               {filtered.map((d) => {
                 const isSelected = selectedDefectId === d.id;
-                const isCrit = d.severity === 'CRITICAL';
                 return (
                   <tr
                     key={d.id}

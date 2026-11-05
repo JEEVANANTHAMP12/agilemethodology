@@ -51,7 +51,7 @@ class ReportGenerator:
                 p_rul = db.query(RulPrediction).filter(RulPrediction.health_result_id == p_health.id).first() if p_health else None
                 history_records.append({
                     "inspection_code": past.inspection_code,
-                    "date": past.start_time.strftime("%Y-%m-%d %H:%M") if past.start_time else "N/A",
+                    "date": past.start_time.strftime("%Y-%m-%d %H:%M") if past.start_time is not None else "N/A",
                     "shi_score": p_health.shi_score if p_health else None,
                     "status": p_health.health_status if p_health else "N/A",
                     "rul_years": p_rul.estimated_rul_years if p_rul else None
@@ -81,8 +81,8 @@ class ReportGenerator:
                 "id": inspection.id,
                 "code": inspection.inspection_code,
                 "status": inspection.status,
-                "start_time": inspection.start_time.isoformat() if inspection.start_time else None,
-                "end_time": inspection.end_time.isoformat() if inspection.end_time else None,
+                "start_time": inspection.start_time.isoformat() if inspection.start_time is not None else None,
+                "end_time": inspection.end_time.isoformat() if inspection.end_time is not None else None,
                 "ambient_temp_c": inspection.ambient_temp_c,
                 "humidity_pct": inspection.humidity_pct,
                 "rover_tilt_deg": inspection.rover_tilt_deg,

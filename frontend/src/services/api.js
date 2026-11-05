@@ -25,7 +25,7 @@ async function request(endpoint, options = {}) {
     try {
       const errData = await response.json();
       errorMsg = errData.detail || errorMsg;
-    } catch (e) {
+    } catch {
       // ignore
     }
     throw new Error(errorMsg);
@@ -137,5 +137,58 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data)
     })
+  },
+
+  // Scala 3 / Pekko Telemetry Stream Engine (Port 8090 & API Proxy)
+  scalaStream: {
+    getStats: async () => {
+      try {
+        const res = await fetch('/api/v1/telemetry/stats');
+        if (res.ok) return await res.json();
+      } catch {
+        // ignore and fallback
+      }
+      const res = await fetch('http://127.0.0.1:8090/api/v1/telemetry/stats');
+      if (!res.ok) throw new Error(`Scala stream HTTP error ${res.status}`);
+      return await res.json();
+    },
+    ingestTelemetry: async (sample) => {
+      try {
+        const res = await fetch('/api/v1/telemetry/ingest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sample)
+        });
+        if (res.ok) return await res.json();
+      } catch {
+        // ignore and fallback
+      }
+      const res = await fetch('http://127.0.0.1:8090/api/v1/telemetry/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sample)
+      });
+      return await res.json();
+    },
+    connectLiveWebSocket: (onMessage, onError) => {
+      const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.hostname || '127.0.0.1';
+      const url = `${wsProto}//${host}:8090/api/v1/telemetry/live`;
+      try {
+        const ws = new WebSocket(url);
+        ws.onmessage = (event) => {
+          try {
+            onMessage(JSON.parse(event.data));
+          } catch {
+            // ignore JSON parse error
+          }
+        };
+        if (onError) ws.onerror = onError;
+        return ws;
+      } catch (err) {
+        if (onError) onError(err);
+        return null;
+      }
+    }
   }
 };

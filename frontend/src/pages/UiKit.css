@@ -6,9 +6,13 @@
   position: sticky;
   top: 0;
   z-index: var(--z-nav);
-  background: var(--nav-bg);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(18px) saturate(1.4);
+  padding: var(--space-3) var(--shell-gutter) 0;
+  background: linear-gradient(
+    180deg,
+    var(--canvas) 0%,
+    color-mix(in srgb, var(--canvas) 82%, transparent) 58%,
+    transparent 100%
+  );
 }
 
 .uikit__topbar-inner {
@@ -18,27 +22,43 @@
   gap: 12px;
   width: 100%;
   max-width: var(--shell-max);
+  min-height: 56px;
   margin: 0 auto;
-  padding: 10px var(--shell-gutter);
+  padding: 7px 9px 7px 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--nav-bg);
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(24px) saturate(1.5);
 }
 
 .uikit__back {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-secondary);
+  transition: color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    transform var(--duration-base) var(--ease-out);
 }
 
 .uikit__back:hover {
   color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface-alt) 76%, transparent);
+  border-color: var(--border-subtle);
+  transform: translateX(-1px);
 }
 
 .uikit__topbar-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -50,25 +70,41 @@
 }
 
 .uikit__hero-card {
+  padding: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(620px 320px at 88% 8%, var(--accent-bg), transparent 66%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 40%),
+    var(--surface);
+  box-shadow: var(--shadow-hover);
+}
+
+.uikit__hero-card > .ui-card__body {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(180px, 0.75fr);
+  flex: 1;
+  grid-template-columns: minmax(0, 1.15fr) minmax(170px, 0.85fr);
   gap: var(--space-6);
   align-items: center;
+  align-content: center;
   padding: var(--space-7);
-  overflow: hidden;
 }
 
 .uikit__hero-copy h2 {
   margin: var(--space-4) 0 var(--space-2);
-  font-size: clamp(24px, 2.8vw, 36px);
-  letter-spacing: -0.04em;
+  max-width: 18ch;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 3vw, 40px);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
 }
 
 .uikit__hero-copy p {
   max-width: 56ch;
   font-size: var(--text-sm);
   color: var(--text-secondary);
-  line-height: 1.65;
+  line-height: 1.7;
 }
 
 .uikit__hero-actions {
@@ -274,24 +310,26 @@
 }
 
 @media (max-width: 1080px) {
-  .uikit__hero-grid,
-  .uikit__foundation-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .uikit__chart-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
+@media (max-width: 900px) {
+  .uikit__hero-grid,
+  .uikit__foundation-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 760px) {
-  .uikit__hero-card,
+  .uikit__hero-card > .ui-card__body,
   .uikit__two-col,
   .uikit__chart-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .uikit__hero-card {
+  .uikit__hero-card > .ui-card__body {
     padding: var(--space-5);
   }
 

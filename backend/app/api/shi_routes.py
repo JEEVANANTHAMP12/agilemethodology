@@ -24,22 +24,22 @@ def evaluate_inspection_shi(inspection_id: int, db: Session = Depends(get_db)):
 
     wall = db.query(Wall).filter(Wall.id == inspection.wall_id).first()
     building = db.query(Building).filter(Building.id == wall.building_id).first() if wall else None
-    building_year = building.construction_year if building else 2010
+    building_year = int(building.construction_year) if (building and building.construction_year is not None) else 2010
 
     images = db.query(Image).filter(Image.inspection_id == inspection_id).all()
     img_ids = [img.id for img in images]
     defects = db.query(Defect).filter(Defect.image_id.in_(img_ids)).all() if img_ids else []
 
     defect_dicts = [
-        {"length_mm": d.length_mm, "max_width_mm": d.max_width_mm, "severity": d.severity}
+        {"length_mm": float(d.length_mm or 0.0), "max_width_mm": float(d.max_width_mm or 0.0), "severity": str(d.severity)}
         for d in defects
     ]
 
-    telemetry = {
-        "ambient_temp_c": inspection.ambient_temp_c,
-        "humidity_pct": inspection.humidity_pct,
-        "rover_tilt_deg": inspection.rover_tilt_deg,
-        "vibration_level": inspection.vibration_level
+    telemetry: dict[str, float] = {
+        "ambient_temp_c": float(inspection.ambient_temp_c or 25.0),
+        "humidity_pct": float(inspection.humidity_pct or 55.0),
+        "rover_tilt_deg": float(inspection.rover_tilt_deg or 1.0),
+        "vibration_level": float(inspection.vibration_level or 0.1)
     }
 
     result = shi_engine.calculate_shi(

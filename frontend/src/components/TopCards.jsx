@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, Badge, RadialGauge, LevelMeter } from '../ui';
-import { IconRover, IconActivity, IconLayers, IconClock, IconWifi } from './UI/Icons';
+import { Badge } from '../ui';
+import { Bot, Activity, Crosshair, Clock } from 'lucide-react';
 import { useAnimatedNumber } from './UI/useAnimatedNumber';
 
 const statusVariant = (status) => {
@@ -15,47 +15,7 @@ const riskVariant = (risk) => {
   return 'success';
 };
 
-const KpiCard = ({ icon, title, subtitle, tag, value, unit, hint, footerLabel, footerValue, gauge, gaugeTone, children }) => (
-  <Card
-    className="dash-kpi"
-    title={
-      <span className="dash-kpi__title">
-        {icon}
-        {title}
-      </span>
-    }
-    subtitle={subtitle}
-    tag={tag}
-  >
-    <div className="dash-kpi__main">
-      <div className="dash-kpi__readout">
-        <div className="dash-kpi__value">
-          {value}
-          {unit && <span className="dash-kpi__unit">{unit}</span>}
-        </div>
-        {hint && <div className="dash-kpi__hint">{hint}</div>}
-        {children}
-      </div>
-      {gauge != null && (
-        <RadialGauge
-          value={gauge}
-          size={82}
-          thickness={6}
-          showTicks={false}
-          tone={gaugeTone}
-          valueText=""
-          label=""
-        />
-      )}
-    </div>
-    <div className="dash-kpi__footer">
-      <span>{footerLabel}</span>
-      <strong>{footerValue}</strong>
-    </div>
-  </Card>
-);
-
-export const TopCards = ({ data = {} }) => {
+export const TopCards = ({ data = {}, crackData = {} }) => {
   const {
     rover_status = 'CONNECTED',
     rover_code = 'ROVER-01',
@@ -64,86 +24,97 @@ export const TopCards = ({ data = {} }) => {
     health_index = 82.0,
     wall_status = 'HEALTHY',
     estimated_rul_years = 18.5,
-    deterioration_trend = 'Stable',
     risk_level = 'Low',
   } = data;
 
-  const animatedBattery = useAnimatedNumber(battery_percentage, 1000, 0);
-  const animatedHealth = useAnimatedNumber(health_index, 1000, 1);
-  const animatedRul = useAnimatedNumber(estimated_rul_years, 1000, 1);
+  const crackWidth = crackData?.primary_width_mm ?? data?.primary_width_mm ?? 0.0;
+  const crackSeverity = crackData?.primary_severity || (wall_status === 'HEALTHY' ? 'NONE' : 'MODERATE');
+
+  const animatedBattery = useAnimatedNumber(battery_percentage, 800, 0);
+  const animatedHealth = useAnimatedNumber(health_index, 800, 1);
+  const animatedRul = useAnimatedNumber(estimated_rul_years, 800, 1);
+  const animatedWidth = useAnimatedNumber(crackWidth, 800, 2);
 
   const isHealthy = wall_status === 'HEALTHY';
-  const isCritical = wall_status === 'CRITICAL';
-  const healthTone = isCritical ? 'danger' : isHealthy ? 'success' : 'warning';
 
   return (
-    <div className="ui-grid ui-grid--auto dash-kpis">
-      <KpiCard
-        icon={<IconRover size={15} />}
-        title="Crawler Telemetry"
-        subtitle={rover_code}
-        tag={
-          <Badge variant={rover_status === 'CONNECTED' ? 'success' : 'danger'} size="sm" dot>
-            {rover_status}
-          </Badge>
-        }
-        value={animatedBattery}
-        unit="%"
-        hint="Nominal power cell"
-        footerLabel={
-          <span className="dash-kpi__inline">
-            <IconWifi size={13} /> Wi-Fi RSSI
-          </span>
-        }
-        footerValue={`${wifi_signal_dbm} dBm`}
-        gauge={battery_percentage}
-        gaugeTone="success"
-      />
-
-      <KpiCard
-        icon={<IconActivity size={15} />}
-        title="Structural Health"
-        subtitle="Normalized index"
-        tag={<Badge variant={statusVariant(wall_status)} size="sm">{wall_status}</Badge>}
-        value={animatedHealth}
-        unit="/ 100 SHI"
-        hint={isHealthy ? 'Nominal structural integrity' : 'Aperture penalty applied'}
-        footerLabel="Baseline evaluation"
-        footerValue={isHealthy ? 'Nominal tolerance' : 'Degradation logged'}
-        gauge={health_index}
-        gaugeTone={healthTone}
-      />
-
-      <KpiCard
-        icon={<IconLayers size={15} />}
-        title="Bearing Substrate"
-        subtitle="Target concrete facade"
-        tag={<Badge variant={statusVariant(wall_status)} size="sm">{wall_status}</Badge>}
-        value={isHealthy ? 'Grade A' : isCritical ? 'Grade C' : 'Grade B'}
-        unit="integrity"
-        hint="C35 reinforced concrete"
-        footerLabel="Target material"
-        footerValue="C35 / 40 MPa"
-      >
-        <div className="dash-kpi__meter">
-          <LevelMeter value={isHealthy ? 100 : isCritical ? 33 : 66} bars={3} tone={healthTone} />
-          <span className="ui-text-xs ui-muted">3-zone assessment</span>
+    <section className="dash-metric-bar" aria-label="Key Performance Indicators">
+      {/* 1. Structural Health Index */}
+      <div className="dash-metric-item">
+        <div className="dash-metric-header">
+          <Activity size={13} className="dash-metric-icon" />
+          <span className="dash-metric-label">Structural Health</span>
         </div>
-      </KpiCard>
+        <div className="dash-metric-body">
+          <div className="dash-metric-val-wrap">
+            <span className="dash-metric-value">{animatedHealth}</span>
+            <span className="dash-metric-unit">/ 100 SHI</span>
+          </div>
+          <Badge variant={statusVariant(wall_status)} size="sm">
+            {isHealthy ? 'Grade A' : wall_status}
+          </Badge>
+        </div>
+      </div>
 
-      <KpiCard
-        icon={<IconClock size={15} />}
-        title="Prognosis Horizon"
-        subtitle="Remaining useful life"
-        tag={<Badge variant={riskVariant(risk_level)} size="sm">{risk_level} risk</Badge>}
-        value={animatedRul}
-        unit="years"
-        hint="50-year service benchmark"
-        footerLabel="Progression trend"
-        footerValue={deterioration_trend}
-        gauge={(estimated_rul_years / 50) * 100}
-        gaugeTone="info"
-      />
-    </div>
+      {/* 2. Crack Metrology */}
+      <div className="dash-metric-item">
+        <div className="dash-metric-header">
+          <Crosshair size={13} className="dash-metric-icon" />
+          <span className="dash-metric-label">Max Aperture</span>
+        </div>
+        <div className="dash-metric-body">
+          <div className="dash-metric-val-wrap">
+            <span className="dash-metric-value">{animatedWidth}</span>
+            <span className="dash-metric-unit">mm</span>
+          </div>
+          <Badge
+            variant={
+              crackSeverity === 'CRITICAL'
+                ? 'danger'
+                : crackSeverity === 'HIGH' || crackSeverity === 'MODERATE'
+                ? 'warning'
+                : 'success'
+            }
+            size="sm"
+          >
+            {crackSeverity}
+          </Badge>
+        </div>
+      </div>
+
+      {/* 3. Forecast Prognosis */}
+      <div className="dash-metric-item">
+        <div className="dash-metric-header">
+          <Clock size={13} className="dash-metric-icon" />
+          <span className="dash-metric-label">Prognosis RUL</span>
+        </div>
+        <div className="dash-metric-body">
+          <div className="dash-metric-val-wrap">
+            <span className="dash-metric-value">{animatedRul}</span>
+            <span className="dash-metric-unit">years</span>
+          </div>
+          <Badge variant={riskVariant(risk_level)} size="sm">
+            {risk_level} Risk
+          </Badge>
+        </div>
+      </div>
+
+      {/* 4. Crawler Telemetry */}
+      <div className="dash-metric-item">
+        <div className="dash-metric-header">
+          <Bot size={13} className="dash-metric-icon" />
+          <span className="dash-metric-label">{rover_code} Link</span>
+        </div>
+        <div className="dash-metric-body">
+          <div className="dash-metric-val-wrap">
+            <span className="dash-metric-value">{animatedBattery}%</span>
+            <span className="dash-metric-unit">power</span>
+          </div>
+          <Badge variant={rover_status === 'CONNECTED' ? 'success' : 'danger'} size="sm" dot>
+            {wifi_signal_dbm} dBm
+          </Badge>
+        </div>
+      </div>
+    </section>
   );
 };

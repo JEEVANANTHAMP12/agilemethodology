@@ -2,16 +2,31 @@ import os
 from pathlib import Path
 from urllib.parse import quote_plus
 
-from dotenv import load_dotenv
-
 BASE_DIR = Path(__file__).resolve().parent
 ROOT_DIR = BASE_DIR.parent
 
-# Load environment variables from .env files
-for env_candidate in [ROOT_DIR / ".env", BASE_DIR / ".env", ROOT_DIR.parent / ".env"]:
-    if env_candidate.exists():
-        load_dotenv(env_candidate)
-        break
+# Load environment variables from .env files with fallback
+try:
+    from dotenv import load_dotenv
+    for env_candidate in [ROOT_DIR / ".env", BASE_DIR / ".env", ROOT_DIR.parent / ".env"]:
+        if env_candidate.exists():
+            load_dotenv(env_candidate)
+            break
+except ImportError:
+    for env_candidate in [ROOT_DIR / ".env", BASE_DIR / ".env", ROOT_DIR.parent / ".env"]:
+        if env_candidate.exists():
+            try:
+                with open(env_candidate, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            k, v = line.split("=", 1)
+                            k, v = k.strip(), v.strip().strip("'\"")
+                            if k not in os.environ:
+                                os.environ[k] = v
+                break
+            except Exception:
+                pass
 
 class Settings:
     PROJECT_NAME: str = "Structural Health & Crack Detection Rover System"
@@ -32,13 +47,39 @@ class Settings:
         if o.strip()
     ]
     
-    # Database Settings - MySQL by default, switchable to SQLite or custom URL via env
-    DB_TYPE: str = os.getenv("DB_TYPE", "mysql")  # "mysql" or "sqlite"
+    # Database Settings - Supports MongoDB, MySQL, and SQLite via env
+    DB_TYPE: str = os.getenv("DB_TYPE", "mongodb")  # "mongodb", "mysql", or "sqlite"
+
+    # MongoDB Settings - Primary Target Database name: agile
+    MONGO_HOST: str = os.getenv("MONGO_HOST", "127.0.0.1")
+    MONGO_PORT: int = int(os.getenv("MONGO_PORT", "27017"))
+    MONGO_USER: str = os.getenv("MONGO_USER", "")
+    MONGO_PASSWORD: str = os.getenv("MONGO_PASSWORD", "")
+    MONGO_DB: str = os.getenv("MONGO_DB", "agile")
+    MONGO_URI: str = os.getenv("MONGO_URI", "")
+
+    # MySQL Settings - Fallback/Alternative
     MYSQL_HOST: str = os.getenv("MYSQL_HOST", "127.0.0.1")
     MYSQL_PORT: int = int(os.getenv("MYSQL_PORT", "3306"))
     MYSQL_USER: str = os.getenv("MYSQL_USER", "root")
     MYSQL_PASSWORD: str = os.getenv("MYSQL_PASSWORD", "")
     MYSQL_DB: str = os.getenv("MYSQL_DB", "structural_rover")
+
+    # Scala 3 / Pekko Reactive Telemetry Stream Engine
+    SCALA_TELEMETRY_HOST: str = os.getenv("SCALA_TELEMETRY_HOST", "127.0.0.1")
+    SCALA_TELEMETRY_PORT: int = int(os.getenv("SCALA_TELEMETRY_PORT", "8090"))
+    SCALA_TELEMETRY_URL: str = os.getenv("SCALA_TELEMETRY_URL", f"http://{SCALA_TELEMETRY_HOST}:{SCALA_TELEMETRY_PORT}")
+
+    @property
+    def MONGODB_URL(self) -> str:
+        """Returns the fully qualified MongoDB connection URI for database 'agile'."""
+        if self.MONGO_URI:
+            return self.MONGO_URI
+        auth_part = ""
+        if self.MONGO_USER:
+            pwd_part = f":{quote_plus(self.MONGO_PASSWORD)}" if self.MONGO_PASSWORD else ""
+            auth_part = f"{quote_plus(self.MONGO_USER)}{pwd_part}@"
+        return f"mongodb://{auth_part}{self.MONGO_HOST}:{self.MONGO_PORT}/{self.MONGO_DB}"
 
     @property
     def DATABASE_URL(self) -> str:
@@ -47,6 +88,9 @@ class Settings:
         if explicit_url:
             return explicit_url
         
+        if self.DB_TYPE.lower() == "mongodb":
+            return self.MONGODB_URL
+
         if self.DB_TYPE.lower() == "mysql":
             pwd_part = f":{quote_plus(self.MYSQL_PASSWORD)}" if self.MYSQL_PASSWORD else ""
             return f"mysql+pymysql://{self.MYSQL_USER}{pwd_part}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DB}?charset=utf8mb4"

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { cx } from '../utils/cx';
 
 export function Card({
@@ -10,23 +10,44 @@ export function Card({
   variant = 'default',
   padding = 'md',
   interactive = false,
+  spotlight = false,
   className = '',
   style,
   as: Tag = 'section',
+  onPointerMove,
+  onPointerLeave,
   ...props
 }) {
   const hasHeader = Boolean(title || subtitle || tag || actions);
+  const spotlightRef = useRef(null);
+
+  const handlePointerMove = (event) => {
+    if (spotlight && spotlightRef.current) {
+      const rect = spotlightRef.current.getBoundingClientRect();
+      spotlightRef.current.style.setProperty('--spot-x', `${event.clientX - rect.left}px`);
+      spotlightRef.current.style.setProperty('--spot-y', `${event.clientY - rect.top}px`);
+    }
+    onPointerMove?.(event);
+  };
+
+  const handlePointerLeave = (event) => {
+    onPointerLeave?.(event);
+  };
 
   return (
     <Tag
+      ref={spotlight ? spotlightRef : undefined}
       className={cx(
         'ui-card',
         variant !== 'default' && `ui-card--${variant}`,
         `ui-card--pad-${padding}`,
         interactive && 'ui-card--interactive',
+        spotlight && 'ui-card--spotlight',
         className
       )}
       style={style}
+      onPointerMove={spotlight ? handlePointerMove : onPointerMove}
+      onPointerLeave={spotlight ? handlePointerLeave : onPointerLeave}
       {...props}
     >
       {hasHeader && (

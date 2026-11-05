@@ -1,0 +1,11 @@
+[debug] Created transactional ClassFileManager with tempDir = C:\project\agile\scala-telemetry-service\target\scala-3.3.3\test-classes.bak
+[debug] About to delete class files:
+[debug] 	TelemetrySpec.class
+[debug] 	TelemetrySpec.tasty
+[debug] We backup class files:
+[debug] 	TelemetrySpec.class
+[debug] 	TelemetrySpec.tasty
+[debug] Registering generated classes:
+[debug] 	TelemetrySpec.class
+[debug] 	TelemetrySpec.tasty
+[debug] Removing the temporary directory used for backing up class files: C:\project\agile\scala-telemetry-service\target\scala-3.3.3\test-classes.bak
