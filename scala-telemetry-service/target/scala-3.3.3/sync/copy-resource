@@ -1,1 +1,0 @@
-[[{"${BASE}/src/main/resources/logback.xml":["${BASE}/target/scala-3.3.3/classes/logback.xml"]},{"${BASE}/target/scala-3.3.3/classes/logback.xml":["${BASE}/src/main/resources/logback.xml"]}],{"${BASE}/src/main/resources/logback.xml":{"file":"file:///C:/project/agile/scala-telemetry-service/src/main/resources/logback.xml","lastModified":1793860012873}}]
