@@ -1,33 +1,26 @@
 import React, { useState } from 'react';
-import { Card, Badge, Button } from '../ui';
-import {
-  Activity,
-  Clock,
-  AlertTriangle,
-  FileText,
-  Printer,
-  Sliders,
-  TrendingDown,
-  ChevronDown,
-  ChevronUp
-} from 'lucide-react';
-import { useAnimatedNumber } from './UI/useAnimatedNumber';
-import { ShiTrendAreaChart, DegradationRadarChart, RulPrognosticComposedChart } from '../ui';
+import { Activity, Clock, AlertTriangle, FileText, Printer, Sliders, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
+import { ShiTrendAreaChart, DegradationRadarChart, RulPrognosticComposedChart } from './charts/EngineeringCharts';
 import { WhatIfScenarioSimulator } from './WhatIfScenarioSimulator';
 import { AlertsView } from './AlertsView';
 import { ReportsView } from './ReportsView';
 import { api } from '../services/api';
+import { cn } from '../lib/utils';
 
 export const HealthAndReportsView = ({
   healthData = {},
   predictionData = {},
   alerts = [],
   inspectionId = null,
-  onActionComplete = () => {}
+  onActionComplete = () => {},
 }) => {
-  const [subSection, setSubSection] = useState('overview'); // 'overview' | 'alerts' | 'reports'
+  const [subSection, setSubSection] = useState('overview');
   const [showSimulator, setShowSimulator] = useState(false);
-  const [chartMode, setChartMode] = useState('forecast'); // 'forecast' | 'history' | 'radar'
+  const [chartMode, setChartMode] = useState('forecast');
 
   const {
     shi_score = 82.0,
@@ -35,261 +28,199 @@ export const HealthAndReportsView = ({
     crack_penalty = 10.5,
     age_penalty = 4.2,
     env_penalty = 3.3,
-    historical_trend = []
+    historical_trend = [],
   } = healthData;
 
   const {
     estimated_rul_years = 18.5,
     risk_level = 'Low',
-    deterioration_trend = 'Stable'
+    deterioration_trend = 'Stable',
   } = predictionData;
 
-  const unackAlerts = alerts.filter(a => !a.is_acknowledged).length;
+  const unackAlerts = alerts.filter((a) => !a.is_acknowledged).length;
 
-  const animatedShi = useAnimatedNumber(shi_score, 800, 1);
-  const animatedCrackPenalty = useAnimatedNumber(crack_penalty, 800, 1);
-  const animatedAgePenalty = useAnimatedNumber(age_penalty, 800, 1);
-  const animatedEnvPenalty = useAnimatedNumber(env_penalty, 800, 1);
-  const animatedRul = useAnimatedNumber(estimated_rul_years, 800, 1);
+  const statusVariant = health_status === 'CRITICAL' ? 'destructive' : health_status !== 'HEALTHY' ? 'warning' : 'success';
+  const riskVariant = risk_level === 'Critical' ? 'destructive' : risk_level === 'High' || risk_level === 'Moderate' ? 'warning' : 'success';
 
-  const getStatusBadgeVariant = (status = health_status) => {
-    if (status === 'CRITICAL') return 'danger';
-    if (status !== 'HEALTHY') return 'warning';
-    return 'success';
-  };
-
-  const getRiskBadgeVariant = (risk = risk_level) => {
-    if (risk === 'Critical') return 'danger';
-    if (risk === 'High' || risk === 'Moderate') return 'warning';
-    return 'success';
-  };
-
-  // Printable certified dossier trigger
   const handleOpenReport = () => {
     if (!inspectionId) return;
-    const url = api.reports.getHtmlUrl(inspectionId);
-    window.open(url, '_blank');
+    window.open(api.reports.getHtmlUrl(inspectionId), '_blank');
   };
 
   return (
-    <div className="health-reports-view">
-      {/* Sub-navigation pills */}
-      <div className="health-reports__subnav">
-        <div className="health-reports__tabs">
-          <button
-            type="button"
-            className={`health-reports__tab ${subSection === 'overview' ? 'is-active' : ''}`}
-            onClick={() => setSubSection('overview')}
-          >
-            <Activity size={14} />
-            <span>Structural Integrity &amp; Prognosis</span>
-          </button>
-
-          <button
-            type="button"
-            className={`health-reports__tab ${subSection === 'alerts' ? 'is-active' : ''}`}
-            onClick={() => setSubSection('alerts')}
-          >
-            <AlertTriangle size={14} />
+    <Tabs value={subSection} onValueChange={setSubSection} className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <TabsList>
+          <TabsTrigger value="overview">
+            <Activity className="h-3.5 w-3.5" />
+            <span>Integrity &amp; Prognosis</span>
+          </TabsTrigger>
+          <TabsTrigger value="alerts">
+            <AlertTriangle className="h-3.5 w-3.5" />
             <span>Safety Alerts</span>
-            {unackAlerts > 0 && <span className="health-reports__badge">{unackAlerts}</span>}
-          </button>
-
-          <button
-            type="button"
-            className={`health-reports__tab ${subSection === 'reports' ? 'is-active' : ''}`}
-            onClick={() => setSubSection('reports')}
-          >
-            <FileText size={14} />
-            <span>Certified Dossiers</span>
-          </button>
-        </div>
+            {unackAlerts > 0 && (
+              <span className="ml-1 rounded-full bg-destructive px-1.5 text-[10px] text-destructive-foreground">
+                {unackAlerts}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="reports">
+            <FileText className="h-3.5 w-3.5" />
+            <span>Dossiers</span>
+          </TabsTrigger>
+        </TabsList>
 
         {inspectionId && (
-          <Button
-            variant="outline"
-            size="sm"
-            icon={<Printer size={13} />}
-            onClick={handleOpenReport}
-          >
-            Print Dossier
+          <Button variant="outline" size="sm" onClick={handleOpenReport}>
+            <Printer className="h-3.5 w-3.5" />
+            <span>Print Dossier</span>
           </Button>
         )}
       </div>
 
-      {/* 1. Structural Integrity & Prognosis Overview */}
-      {subSection === 'overview' && (
-        <div className="health-overview ui-animate-rise">
-          {/* Executive Integrity Decomposition Card */}
-          <Card
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Activity size={16} />
+      <TabsContent value="overview" className="space-y-4">
+        <Card>
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
                 <span>Structural Health Index (SHI) Decomposition</span>
-              </div>
-            }
-            subtitle="Multi-parameter normalized structural integrity model & ACI degradation telemetry"
-            tag={<Badge variant={getStatusBadgeVariant()}>{health_status}</Badge>}
-            style={{ marginBottom: '16px' }}
-          >
-            <div className="health-kpi-summary">
-              {/* Score Readout */}
-              <div className="health-kpi-score">
-                <div className="health-kpi-score__num">{animatedShi}</div>
-                <div className="health-kpi-score__scale">/ 100 SHI</div>
-                <div className="health-kpi-score__label">Baseline Structural Score</div>
-              </div>
+              </CardTitle>
+              <CardDescription>
+                Weighted penalty scoring across crack geometry, structural age, and environmental load.
+              </CardDescription>
+            </div>
+            <Badge variant={statusVariant}>{health_status}</Badge>
+          </CardHeader>
 
-              {/* Penalty Deductions Breakdown */}
-              <div className="health-kpi-penalties">
-                <div className="health-penalty-row">
-                  <div className="health-penalty-label">
-                    <span className="health-penalty-dot" style={{ background: 'var(--accent-red)' }} />
-                    <span>Crack Aperture Impact</span>
-                  </div>
-                  <div className="health-penalty-value">-{animatedCrackPenalty} pts</div>
-                </div>
-
-                <div className="health-penalty-row">
-                  <div className="health-penalty-label">
-                    <span className="health-penalty-dot" style={{ background: 'var(--accent-amber)' }} />
-                    <span>Age &amp; Cyclic Fatigue</span>
-                  </div>
-                  <div className="health-penalty-value">-{animatedAgePenalty} pts</div>
-                </div>
-
-                <div className="health-penalty-row">
-                  <div className="health-penalty-label">
-                    <span className="health-penalty-dot" style={{ background: 'var(--accent-cyan)' }} />
-                    <span>Environmental Stresses</span>
-                  </div>
-                  <div className="health-penalty-value">-{animatedEnvPenalty} pts</div>
-                </div>
-              </div>
-
-              {/* RUL Prognosis Summary */}
-              <div className="health-kpi-rul">
-                <div className="health-rul-header">
-                  <Clock size={14} className="ui-muted" />
-                  <span>Remaining Useful Life</span>
-                </div>
-                <div className="health-rul-num">
-                  {animatedRul} <span className="health-rul-unit">Years</span>
-                </div>
-                <div className="health-rul-footer">
-                  <Badge variant={getRiskBadgeVariant()} size="sm">{risk_level} Risk</Badge>
-                  <span className="health-rul-trend">{deterioration_trend}</span>
-                </div>
+          <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="flex flex-col justify-center rounded-md border bg-muted/40 p-4">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Baseline Score</div>
+              <div className="mt-1 flex items-baseline gap-1.5">
+                <span className="text-3xl font-semibold tabular-nums">{Number(shi_score).toFixed(1)}</span>
+                <span className="text-xs text-muted-foreground">/ 100 SHI</span>
               </div>
             </div>
-          </Card>
 
-          {/* Interactive Degradation Forecast Chart */}
-          <Card
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <TrendingDown size={16} />
-                  <span>Lifecycle Prognosis &amp; Degradation Extrapolation</span>
-                </div>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button
-                    type="button"
-                    className={`health-chart-btn ${chartMode === 'forecast' ? 'is-active' : ''}`}
-                    onClick={() => setChartMode('forecast')}
-                  >
-                    5-Yr Forecast
-                  </button>
-                  <button
-                    type="button"
-                    className={`health-chart-btn ${chartMode === 'history' ? 'is-active' : ''}`}
-                    onClick={() => setChartMode('history')}
-                  >
-                    Inspection History
-                  </button>
-                  <button
-                    type="button"
-                    className={`health-chart-btn ${chartMode === 'radar' ? 'is-active' : ''}`}
-                    onClick={() => setChartMode('radar')}
-                  >
-                    Stress Radar
-                  </button>
-                </div>
+            <div className="space-y-2.5 rounded-md border p-4 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <span className="h-2 w-2 rounded-full bg-red-500" /> Crack Aperture Impact
+                </span>
+                <span className="font-mono font-medium tabular-nums">-{Number(crack_penalty).toFixed(1)} pts</span>
               </div>
-            }
-            subtitle="Arrhenius / Weibull degradation extrapolation curve with critical intervention boundary"
-            style={{ marginBottom: '16px' }}
-          >
-            <div style={{ padding: '12px 0' }}>
-              {chartMode === 'forecast' && (
-                <RulPrognosticComposedChart
-                  predictionData={{
-                    current_shi: shi_score,
-                    estimated_rul_years,
-                    risk_level
-                  }}
-                  height={280}
-                />
-              )}
-              {chartMode === 'history' && (
-                <ShiTrendAreaChart
-                  trendData={historical_trend}
-                  currentShi={shi_score}
-                  height={280}
-                />
-              )}
-              {chartMode === 'radar' && (
-                <DegradationRadarChart
-                  metrics={{
-                    crack_penalty,
-                    age_penalty,
-                    env_penalty,
-                    vibration: 0.08,
-                    thermal: 26.5
-                  }}
-                  height={280}
-                />
-              )}
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <span className="h-2 w-2 rounded-full bg-amber-500" /> Age &amp; Fatigue
+                </span>
+                <span className="font-mono font-medium tabular-nums">-{Number(age_penalty).toFixed(1)} pts</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <span className="h-2 w-2 rounded-full bg-sky-500" /> Environmental Stress
+                </span>
+                <span className="font-mono font-medium tabular-nums">-{Number(env_penalty).toFixed(1)} pts</span>
+              </div>
             </div>
-          </Card>
 
-          {/* Collapsible What-If Scenario Simulator */}
-          <div className="health-simulator-section">
-            <button
-              type="button"
-              className="health-simulator-toggle"
-              onClick={() => setShowSimulator(!showSimulator)}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Sliders size={15} />
-                <span style={{ fontWeight: 600 }}>What-If Scenario Simulator</span>
-                <span className="ui-muted" style={{ fontSize: '12px' }}>— Test remediation and environmental stress models</span>
+            <div className="flex flex-col justify-between rounded-md border bg-muted/40 p-4">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" />
+                <span>Remaining Useful Life</span>
               </div>
-              {showSimulator ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
+              <div className="my-1 text-2xl font-semibold tabular-nums">
+                {Number(estimated_rul_years).toFixed(1)}{' '}
+                <span className="text-xs font-normal text-muted-foreground">Years</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <Badge variant={riskVariant}>{risk_level} Risk</Badge>
+                <span className="text-muted-foreground">{deterioration_trend}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            {showSimulator && (
-              <div className="health-simulator-body ui-animate-rise">
-                <WhatIfScenarioSimulator baselineShi={shi_score} baselineRul={estimated_rul_years} />
-              </div>
+        <Card>
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2">
+                <TrendingDown className="h-4 w-4" />
+                <span>Lifecycle Degradation &amp; Prognosis</span>
+              </CardTitle>
+              <CardDescription>
+                5-year trajectory with 95% confidence bounds and failure intervention threshold.
+              </CardDescription>
+            </div>
+            <div className="inline-flex rounded-md border bg-muted p-0.5">
+              {[
+                { id: 'forecast', label: 'Forecast' },
+                { id: 'history', label: 'History' },
+                { id: 'radar', label: 'Penalty Radar' },
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setChartMode(m.id)}
+                  className={cn(
+                    'rounded-sm px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
+                    chartMode === m.id
+                      ? 'bg-background text-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {chartMode === 'forecast' && (
+              <RulPrognosticComposedChart
+                currentShi={shi_score}
+                estimatedRulYears={estimated_rul_years}
+                riskLevel={risk_level}
+                height={270}
+              />
             )}
-          </div>
-        </div>
-      )}
+            {chartMode === 'history' && (
+              <ShiTrendAreaChart data={historical_trend} currentShi={shi_score} height={270} />
+            )}
+            {chartMode === 'radar' && (
+              <DegradationRadarChart
+                crackPenalty={crack_penalty}
+                agePenalty={age_penalty}
+                envPenalty={env_penalty}
+                height={270}
+              />
+            )}
+          </CardContent>
+        </Card>
 
-      {/* 2. Safety Thresholds & Alerts */}
-      {subSection === 'alerts' && (
-        <div className="ui-animate-rise">
-          <AlertsView alerts={alerts} onAlertAcknowledged={onActionComplete} />
+        <div className="space-y-3">
+          <Button
+            variant="outline"
+            className="w-full justify-between"
+            onClick={() => setShowSimulator(!showSimulator)}
+          >
+            <span className="flex items-center gap-2">
+              <Sliders className="h-4 w-4" />
+              <span>What-If Remediation Simulator</span>
+            </span>
+            {showSimulator ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+          {showSimulator && (
+            <WhatIfScenarioSimulator currentShi={shi_score} baseRul={estimated_rul_years} />
+          )}
         </div>
-      )}
+      </TabsContent>
 
-      {/* 3. Certified Dossiers & Reports */}
-      {subSection === 'reports' && (
-        <div className="ui-animate-rise">
-          <ReportsView inspectionId={inspectionId} />
-        </div>
-      )}
-    </div>
+      <TabsContent value="alerts">
+        <AlertsView alerts={alerts} onAlertAcknowledged={onActionComplete} />
+      </TabsContent>
+
+      <TabsContent value="reports">
+        <ReportsView inspectionId={inspectionId} />
+      </TabsContent>
+    </Tabs>
   );
 };

@@ -86,15 +86,27 @@ def get_mongo_db(db_name: Optional[str] = None):
     return None
 
 
+_last_mongo_check_time = 0.0
+_mongo_connected_cached = False
+
 def is_mongo_connected() -> bool:
-    """Returns True if the MongoDB instance is live and responsive."""
+    """Returns True if the MongoDB instance is live and responsive (cached for 10s to avoid blocking)."""
+    global _last_mongo_check_time, _mongo_connected_cached
+    import time
+    now = time.time()
+    if now - _last_mongo_check_time < 10.0:
+        return _mongo_connected_cached
+    _last_mongo_check_time = now
     try:
-        client = get_mongo_client(server_timeout_ms=1000)
+        client = get_mongo_client(server_timeout_ms=300)
         if client is None:
+            _mongo_connected_cached = False
             return False
         client.admin.command("ping")
+        _mongo_connected_cached = True
         return True
     except Exception:
+        _mongo_connected_cached = False
         return False
 
 
@@ -179,9 +191,8 @@ def seed_mongo_data():
         from app.core.security import hash_password
         now = datetime.now(timezone.utc)
 
-        # 1. Default Inspector User
-        existing_user = db[COLLECTION_USERS].find_one({"username": "inspector"})
-        if not existing_user:
+        # 1. Default Inspector User (only if users collection is empty)
+        if db[COLLECTION_USERS].count_documents({}) == 0:
             default_user = {
                 "id": 1,
                 "username": "inspector",
@@ -194,11 +205,10 @@ def seed_mongo_data():
                 "updated_at": now
             }
             db[COLLECTION_USERS].insert_one(default_user)
-            logger.info(f"MongoDB '{db.name}': Created default inspector user.")
+            logger.info(f"MongoDB '{db.name}': Created baseline inspector user.")
 
-        # 2. Default Registered Rover
-        existing_rover = db[COLLECTION_ROVERS].find_one({"rover_code": "ROVER-01"})
-        if not existing_rover:
+        # 2. Default Registered Rover (only if rovers collection is empty)
+        if db[COLLECTION_ROVERS].count_documents({}) == 0:
             default_rover = {
                 "id": 1,
                 "rover_code": "ROVER-01",
@@ -216,9 +226,8 @@ def seed_mongo_data():
             db[COLLECTION_ROVERS].insert_one(default_rover)
             logger.info(f"MongoDB '{db.name}': Registered default rover (ROVER-01).")
 
-        # 3. Default Building
-        existing_building = db[COLLECTION_BUILDINGS].find_one({"name": "Main Engineering Complex - Block A"})
-        if not existing_building:
+        # 3. Default Building (only if buildings collection is empty)
+        if db[COLLECTION_BUILDINGS].count_documents({}) == 0:
             default_building = {
                 "id": 1,
                 "name": "Main Engineering Complex - Block A",
@@ -230,17 +239,14 @@ def seed_mongo_data():
                 "created_at": now,
                 "updated_at": now
             }
-            res_b = db[COLLECTION_BUILDINGS].insert_one(default_building)
-            building_id = 1
-        else:
-            building_id = existing_building.get("id", 1)
+            db[COLLECTION_BUILDINGS].insert_one(default_building)
+            logger.info(f"MongoDB '{db.name}': Configured baseline building.")
 
-        # 4. Default Wall
-        existing_wall = db[COLLECTION_WALLS].find_one({"wall_code": "W-01-NORTH"})
-        if not existing_wall:
+        # 4. Default Wall (only if walls collection is empty)
+        if db[COLLECTION_WALLS].count_documents({}) == 0:
             default_wall = {
                 "id": 1,
-                "building_id": building_id,
+                "building_id": 1,
                 "wall_code": "W-01-NORTH",
                 "orientation": "North",
                 "surface_material": "Cast-in-Place Concrete",
@@ -251,7 +257,7 @@ def seed_mongo_data():
                 "updated_at": now
             }
             db[COLLECTION_WALLS].insert_one(default_wall)
-            logger.info(f"MongoDB '{db.name}': Configured baseline wall W-01-NORTH.")
+            logger.info(f"MongoDB '{db.name}': Configured baseline wall.")
 
         return True
     except Exception as exc:

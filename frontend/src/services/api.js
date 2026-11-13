@@ -139,6 +139,16 @@ export const api = {
     })
   },
 
+  // Database & MongoDB Management
+  db: {
+    getStatus: () => request('/db/status'),
+    getIntegrity: () => request('/db/integrity'),
+    triggerSync: () => request('/db/sync', { method: 'POST' }),
+    getCollections: () => request('/db/collections'),
+    getCollectionDocs: (collectionName, limit = 50, skip = 0) =>
+      request(`/db/collections/${collectionName}?limit=${limit}&skip=${skip}`)
+  },
+
   // Scala 3 / Pekko Telemetry Stream Engine (Port 8090 & API Proxy)
   scalaStream: {
     getStats: async () => {
@@ -149,6 +159,17 @@ export const api = {
         // ignore and fallback
       }
       const res = await fetch('http://127.0.0.1:8090/api/v1/telemetry/stats');
+      if (!res.ok) throw new Error(`Scala stream HTTP error ${res.status}`);
+      return await res.json();
+    },
+    getHistory: async () => {
+      try {
+        const res = await fetch('/api/v1/telemetry/history');
+        if (res.ok) return await res.json();
+      } catch {
+        // Fall through to the Scala service origin.
+      }
+      const res = await fetch('http://127.0.0.1:8090/api/v1/telemetry/history');
       if (!res.ok) throw new Error(`Scala stream HTTP error ${res.status}`);
       return await res.json();
     },
@@ -168,6 +189,27 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sample)
       });
+      return await res.json();
+    },
+    resetAlerts: async () => {
+      try {
+        const res = await fetch('/api/v1/telemetry/reset-alerts', { method: 'POST' });
+        if (res.ok) return await res.json();
+      } catch {
+        // ignore and fallback
+      }
+      const res = await fetch('http://127.0.0.1:8090/api/v1/telemetry/reset-alerts', { method: 'POST' });
+      return await res.json();
+    },
+    getBatchAnalytics: async () => {
+      try {
+        const res = await fetch('/api/v1/telemetry/analytics');
+        if (res.ok) return await res.json();
+      } catch {
+        // ignore and fallback
+      }
+      const res = await fetch('http://127.0.0.1:8090/api/v1/telemetry/analytics');
+      if (!res.ok) throw new Error(`Spark analytics HTTP error ${res.status}`);
       return await res.json();
     },
     connectLiveWebSocket: (onMessage, onError) => {

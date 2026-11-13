@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Button, Badge } from './UI/Components';
-import {
-  FileText as IconFileText,
-  RefreshCw as IconRefresh,
-  Printer as IconPrinter,
-  Download as IconDownload,
-  Check as IconCheck,
-  ShieldCheck as IconShield
-} from 'lucide-react';
+import { FileText, RefreshCw, Printer, Download, Check } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Alert, AlertDescription } from './ui/alert';
 import { api } from '../services/api';
 
 export const ReportsView = ({ inspectionId }) => {
@@ -24,329 +20,189 @@ export const ReportsView = ({ inspectionId }) => {
       setReportData(data);
     } catch (e) {
       console.error(e);
-      setError('Unable to fetch certified report dossier from telemetry server.');
+      setError('Unable to fetch report dossier from backend server.');
     } finally {
       setLoading(false);
     }
   }, [inspectionId]);
 
   useEffect(() => {
-    if (inspectionId) {
-      const timer = setTimeout(() => {
-        fetchReport();
-      }, 0);
-      return () => clearTimeout(timer);
-    }
+    if (!inspectionId) return undefined;
+    const t = window.setTimeout(() => fetchReport(), 0);
+    return () => window.clearTimeout(t);
   }, [inspectionId, fetchReport]);
 
   const handleOpenPrintable = () => {
     if (!inspectionId) return;
-    const url = api.reports.getHtmlUrl(inspectionId);
-    window.open(url, '_blank');
+    window.open(api.reports.getHtmlUrl(inspectionId), '_blank');
   };
 
   const handleDownloadJson = () => {
     if (!reportData) return;
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(reportData, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `Dossier_${reportData.metadata?.report_id || 'Inspection'}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Dossier_${reportData.metadata?.report_id || `REP-${inspectionId}`}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   if (!inspectionId) {
     return (
-      <Card
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <IconFileText size={16} color="var(--primary)" />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
             <span>Structural Inspection Dossier</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center rounded-md border border-dashed py-12 text-center">
+            <FileText className="mb-2 h-8 w-8 text-muted-foreground opacity-60" />
+            <div className="text-sm font-medium">No Inspection Session Selected</div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              Select or start an inspection session to inspect and export its report.
+            </div>
           </div>
-        }
-      >
-        <div style={{
-          textAlign: 'center',
-          padding: '48px 24px',
-          color: 'var(--text-secondary)',
-          background: 'var(--surface-alt)',
-          borderRadius: '8px',
-          border: '1px dashed var(--border)'
-        }}>
-          <IconFileText size={36} color="var(--text-secondary)" style={{ marginBottom: '12px', opacity: 0.6 }} />
-          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-            No Inspection Session Selected
-          </div>
-          <div style={{ fontSize: '12px' }}>
-            Initiate or select an inspection session to view and export the certified structural engineering dossier.
-          </div>
-        </div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card
-      title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <IconFileText size={16} color="var(--primary)" />
-          <span>Certified Inspection Dossier</span>
-          <span style={{
-            fontSize: '10px',
-            fontFamily: 'monospace',
-            color: 'var(--text-secondary)',
-            background: 'var(--surface-alt)',
-            padding: '2px 6px',
-            borderRadius: '4px',
-            border: '1px solid var(--border)'
-          }}>
-            ISO/IEC 17020 COMPLIANT
-          </span>
-        </div>
-      }
-      subtitle="Complete structural asset photogrammetric, defect metrology, & degradation prognosis record"
-      style={{ marginBottom: '24px' }}
-    >
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px',
-        flexWrap: 'wrap',
-        gap: '12px',
-        paddingBottom: '16px',
-        borderBottom: '1px solid var(--border)'
-      }}>
-        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '520px' }}>
-          Certified dossier cryptographically verified by rover edge-node sensors and calibrated computer vision sub-pixel distance transforms.
+    <Card>
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4 space-y-0 border-b pb-4">
+        <div className="space-y-1">
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            <span>Inspection Dossier</span>
+            <Badge variant="outline" className="font-mono text-[10px]">
+              ISO 1920 / ACI 224R
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Photogrammetric asset measurements, defect summary, and lifecycle forecast record.
+          </CardDescription>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={fetchReport}
-            loading={loading}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-          >
-            <IconRefresh size={13} className={loading ? 'ui-spin' : ''} />
-            <span>Sync Telemetry</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={fetchReport} loading={loading}>
+            {!loading && <RefreshCw className="h-3.5 w-3.5" />}
+            <span>Refresh</span>
           </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleDownloadJson}
-            disabled={!reportData}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-          >
-            <IconDownload size={13} />
+          <Button variant="outline" size="sm" onClick={handleDownloadJson} disabled={!reportData}>
+            <Download className="h-3.5 w-3.5" />
             <span>Export JSON</span>
           </Button>
-
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleOpenPrintable}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-          >
-            <IconPrinter size={13} />
-            <span>Print / PDF Dossier</span>
+          <Button size="sm" onClick={handleOpenPrintable}>
+            <Printer className="h-3.5 w-3.5" />
+            <span>Print / PDF</span>
           </Button>
         </div>
-      </div>
+      </CardHeader>
 
-      {error && (
-        <div style={{
-          padding: '12px 16px',
-          background: 'var(--pastel-red-bg)',
-          border: '1px solid var(--pastel-red-border)',
-          borderRadius: '6px',
-          color: 'var(--pastel-red-text)',
-          fontSize: '12px',
-          marginBottom: '16px'
-        }}>
-          {error}
-        </div>
-      )}
+      <CardContent className="space-y-4 pt-5">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {loading && !reportData && (
-        <div style={{ padding: '36px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          <IconRefresh size={24} className="ui-spin" color="var(--primary)" style={{ marginBottom: '8px' }} />
-          <div>Compiling photogrammetric metrics and generating dossier...</div>
-        </div>
-      )}
-
-      {reportData && (
-        <div style={{
-          background: 'var(--surface-alt)',
-          border: '1px solid var(--border)',
-          borderRadius: '10px',
-          padding: '20px'
-        }}>
-          {/* Header Metadata Bar */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: '1px solid var(--border)',
-            paddingBottom: '14px',
-            marginBottom: '18px',
-            flexWrap: 'wrap',
-            gap: '10px'
-          }}>
-            <div>
-              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'monospace' }}>
-                DOCUMENT RECORD NUMBER
-              </div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace', marginTop: '2px' }}>
-                {reportData.metadata?.report_id || `REP-${inspectionId}`}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  TIMESTAMP
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                  {reportData.metadata?.generated_at ? new Date(reportData.metadata.generated_at).toLocaleString() : 'N/A'}
-                </div>
-              </div>
-              <Badge variant="success" size="sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <IconCheck size={11} /> AUDIT CERTIFIED
-              </Badge>
-            </div>
+        {loading && !reportData && (
+          <div className="py-10 text-center text-xs text-muted-foreground">
+            Loading dossier record...
           </div>
+        )}
 
-          {/* Key Metric Tiles */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-            gap: '12px',
-            marginBottom: '20px'
-          }}>
-            {/* Target Asset */}
-            <div style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '8px',
-              padding: '14px',
-              borderLeft: '3px solid var(--primary)'
-            }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'monospace' }}>
-                Target Structural Asset
+        {reportData && (
+          <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Record ID
+                </div>
+                <div className="font-mono text-base font-semibold">
+                  {reportData.metadata?.report_id || `REP-${inspectionId}`}
+                </div>
               </div>
-              <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', marginTop: '4px' }}>
-                {reportData.asset?.wall_code || 'WALL-01'}
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                {reportData.asset?.wall_name || 'Primary Retaining Facet'} • {reportData.asset?.building_name || 'Civil Infrastructure'}
-              </div>
-            </div>
 
-            {/* Crack Metrology */}
-            <div style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '8px',
-              padding: '14px',
-              borderLeft: '3px solid var(--pastel-orange)'
-            }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'monospace' }}>
-                Crack Metrology
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', marginTop: '4px' }}>
-                {reportData.crack_detection?.total_cracks_detected ?? 0} Fissures Detected
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                Peak Aperture: <strong style={{ color: 'var(--pastel-orange)' }}>{reportData.crack_detection?.max_crack_width_mm ?? 0} mm</strong>
-              </div>
-            </div>
-
-            {/* Structural Health Index */}
-            <div style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '8px',
-              padding: '14px',
-              borderLeft: '3px solid var(--pastel-green)'
-            }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'monospace' }}>
-                Structural Health Index
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', marginTop: '4px' }}>
-                {reportData.health_assessment?.shi_score ?? 85.0} / 100
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                Classification: <Badge variant={reportData.health_assessment?.shi_score < 70 ? 'danger' : 'success'} size="sm">
-                  {reportData.health_assessment?.status || 'OPTIMAL'}
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Generated
+                  </div>
+                  <div className="font-mono text-xs">
+                    {reportData.metadata?.generated_at
+                      ? new Date(reportData.metadata.generated_at).toLocaleString()
+                      : 'N/A'}
+                  </div>
+                </div>
+                <Badge variant="success">
+                  <Check className="h-3 w-3" /> Verified
                 </Badge>
               </div>
             </div>
 
-            {/* Lifespan Prognosis */}
-            <div style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '8px',
-              padding: '14px',
-              borderLeft: '3px solid var(--pastel-purple)'
-            }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'monospace' }}>
-                Remaining Useful Life
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', marginTop: '4px' }}>
-                {reportData.rul_prediction?.estimated_rul_years ?? 14.5} Years
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                Trend: <span>{reportData.rul_prediction?.deterioration_trend || 'Steady / Controlled'}</span>
-              </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardContent className="p-3.5">
+                  <div className="font-mono text-[10px] uppercase text-muted-foreground">Target Asset</div>
+                  <div className="mt-1 text-sm font-semibold">
+                    {reportData.asset?.wall_code || 'WALL-01'}
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    {reportData.asset?.wall_name || 'Primary Facade'} · {reportData.asset?.building_name || 'Structure'}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-3.5">
+                  <div className="font-mono text-[10px] uppercase text-muted-foreground">Crack Metrology</div>
+                  <div className="mt-1 text-sm font-semibold tabular-nums">
+                    {reportData.crack_detection?.total_cracks_detected ?? 0} Defects
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    Max Width:{' '}
+                    <span className="font-semibold text-foreground tabular-nums">
+                      {reportData.crack_detection?.max_crack_width_mm ?? 0} mm
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-3.5">
+                  <div className="font-mono text-[10px] uppercase text-muted-foreground">Health Index</div>
+                  <div className="mt-1 text-sm font-semibold tabular-nums">
+                    {reportData.health_assessment?.shi_score ?? 85.0} / 100
+                  </div>
+                  <div className="mt-1">
+                    <Badge variant={reportData.health_assessment?.shi_score < 70 ? 'destructive' : 'success'}>
+                      {reportData.health_assessment?.status || 'OPTIMAL'}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-3.5">
+                  <div className="font-mono text-[10px] uppercase text-muted-foreground">Remaining Useful Life</div>
+                  <div className="mt-1 text-sm font-semibold tabular-nums">
+                    {reportData.rul_prediction?.estimated_rul_years ?? 14.5} Years
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    Trend: {reportData.rul_prediction?.deterioration_trend || 'Stable'}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
-
-          {/* Engineering Sign-off & Chain of Custody */}
-          <div style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: '8px',
-            padding: '14px 18px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '12px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '6px',
-                background: 'var(--accent-bg)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <IconShield size={16} color="var(--primary)" />
-              </div>
-              <div>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Autonomous System Sign-off
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                  SHA256: 7f8a9b1c2d3e4f5a...certified-node-v2.4
-                </div>
-              </div>
-            </div>
-
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'right' }}>
-              <div>Inspection Agent: <strong>Autonomous Rover Node #1</strong></div>
-              <div>Standard: <strong>ACI 224.1R-07 / ASTM E2544-11a</strong></div>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </CardContent>
     </Card>
   );
 };

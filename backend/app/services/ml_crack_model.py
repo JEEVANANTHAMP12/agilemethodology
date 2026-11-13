@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -7,14 +7,14 @@ import cv2
 import joblib
 import numpy as np
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline as SklearnFlow
 from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger("MLCrackModel")
 
 class MLCrackModel:
     """
-    Production-grade Machine Learning Model Pipeline for Concrete Wall Crack Detection.
+    Production-grade Machine Learning Model Engine for Concrete Wall Crack Detection.
     
     Architecture:
     1. Computer Vision Feature Extraction:
@@ -61,8 +61,8 @@ class MLCrackModel:
         self.model_dir.mkdir(parents=True, exist_ok=True)
         self.model_file = self.model_dir / "wall_crack_ensemble_model.joblib"
         
-        self.detector_pipeline: Pipeline | None = None
-        self.severity_pipeline: Pipeline | None = None
+        self.detector_model: SklearnFlow | None = None
+        self.severity_model: SklearnFlow | None = None
         self.meta_info: dict[str, Any] = {}
         
         self._initialize_or_train_model()
@@ -72,8 +72,8 @@ class MLCrackModel:
         if self.model_file.exists():
             try:
                 bundle = joblib.load(self.model_file)
-                self.detector_pipeline = bundle.get("detector")
-                self.severity_pipeline = bundle.get("severity")
+                self.detector_model = bundle.get("detector")
+                self.severity_model = bundle.get("severity")
                 self.meta_info = bundle.get("meta", {})
                 logger.info(f"Loaded ML Crack Ensemble from {self.model_file} (Version: {self.meta_info.get('version')})")
                 return
@@ -177,18 +177,18 @@ class MLCrackModel:
         y_sev = np.array(y_sev)
 
         # Train Detector (Random Forest with probability calibration)
-        self.detector_pipeline = Pipeline([
+        self.detector_model = SklearnFlow([
             ("scaler", StandardScaler()),
             ("rf", RandomForestClassifier(n_estimators=120, max_depth=12, random_state=42, class_weight="balanced"))
         ])
-        self.detector_pipeline.fit(X, y_detect)
+        self.detector_model.fit(X, y_detect)
 
         # Train Severity Classifier (Gradient Boosting)
-        self.severity_pipeline = Pipeline([
+        self.severity_model = SklearnFlow([
             ("scaler", StandardScaler()),
             ("gb", GradientBoostingClassifier(n_estimators=100, learning_rate=0.08, max_depth=5, random_state=42))
         ])
-        self.severity_pipeline.fit(X, y_sev)
+        self.severity_model.fit(X, y_sev)
 
         # Save model bundle
         self.meta_info = {
@@ -200,8 +200,8 @@ class MLCrackModel:
         }
 
         joblib.dump({
-            "detector": self.detector_pipeline,
-            "severity": self.severity_pipeline,
+            "detector": self.detector_model,
+            "severity": self.severity_model,
             "meta": self.meta_info
         }, self.model_file)
         logger.info(f"Successfully trained and serialized ML Crack Model to {self.model_file}")
@@ -381,13 +381,13 @@ class MLCrackModel:
         X_sample = features.reshape(1, -1)
 
         # 1. Binary Detection
-        det_probs = self.detector_pipeline.predict_proba(X_sample)[0]
+        det_probs = self.detector_model.predict_proba(X_sample)[0]
         crack_prob = float(det_probs[1]) if len(det_probs) > 1 else float(det_probs[0])
         crack_detected = crack_prob >= 0.50
 
         # 2. Severity Classification
-        sev_classes = list(self.severity_pipeline.classes_)
-        sev_probs = self.severity_pipeline.predict_proba(X_sample)[0]
+        sev_classes = list(self.severity_model.classes_)
+        sev_probs = self.severity_model.predict_proba(X_sample)[0]
         sev_dict = {str(c): round(float(p), 4) for c, p in zip(sev_classes, sev_probs)}
 
         # Predicted severity (forced to NONE if crack_detected is false)
@@ -401,7 +401,7 @@ class MLCrackModel:
                 non_none.sort(key=lambda x: x[1], reverse=True)
                 predicted_severity = non_none[0][0]
             else:
-                predicted_severity = self.severity_pipeline.predict(X_sample)[0]
+                predicted_severity = self.severity_model.predict(X_sample)[0]
 
         # 3. Physical Metrology & Contours Extraction
         # Run distance transform on full-resolution binary mask
@@ -486,7 +486,7 @@ class MLCrackModel:
         aci_compliant = (primary_width <= 0.30) if crack_detected else True
 
         # Feature Attribution weights
-        rf_model = self.detector_pipeline.named_steps["rf"]
+        rf_model = self.detector_model.named_steps["rf"]
         importances = rf_model.feature_importances_
         feature_attributions = [
             {"feature": name, "importance": round(float(imp), 4), "value": round(float(val), 3)}
@@ -642,7 +642,7 @@ class MLCrackModel:
         return {
             "model_version": self.MODEL_VERSION,
             "architecture": "Supervised Feature Ensemble (Random Forest + Gradient Boosting)",
-            "pipeline": [
+            "stages": [
                 "CLAHE Contrast Normalization",
                 "Hessian Tubularity / Frangi Filter",
                 "Multi-scale Black-Hat Morphology",
@@ -657,8 +657,8 @@ class MLCrackModel:
 
     @property
     def is_trained(self) -> bool:
-        """Returns True if both detector and severity pipelines are loaded and ready."""
-        return self.detector_pipeline is not None and self.severity_pipeline is not None
+        """Returns True if both detector and severity models are loaded and ready."""
+        return self.detector_model is not None and self.severity_model is not None
 
 # Global Singleton Instance for fast reuse across API requests
 ml_crack_engine = MLCrackModel()

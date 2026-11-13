@@ -1,0 +1,689 @@
+{
+  "datasetLoadingOutput" : {
+    "inspectionsDataset" : {
+      "name" : "inspections_dataset.csv",
+      "path" : "C:\\project\\agile\\data\\inspections_dataset.csv",
+      "rows" : 51,
+      "columns" : 27,
+      "schema" : [
+        {
+          "name" : "inspection_id",
+          "dataType" : "int",
+          "nullable" : true
+        },
+        {
+          "name" : "inspection_code",
+          "dataType" : "string",
+          "nullable" : true
+        },
+        {
+          "name" : "building_id",
+          "dataType" : "int",
+          "nullable" : true
+        },
+        {
+          "name" : "building_name",
+          "dataType" : "string",
+          "nullable" : true
+        },
+        {
+          "name" : "construction_year",
+          "dataType" : "int",
+          "nullable" : true
+        },
+        {
+          "name" : "structural_type",
+          "dataType" : "string",
+          "nullable" : true
+        },
+        {
+          "name" : "wall_id",
+          "dataType" : "int",
+          "nullable" : true
+        },
+        {
+          "name" : "wall_code",
+          "dataType" : "string",
+          "nullable" : true
+        },
+        {
+          "name" : "wall_material",
+          "dataType" : "string",
+          "nullable" : true
+        },
+        {
+          "name" : "orientation",
+          "dataType" : "string",
+          "nullable" : true
+        },
+        {
+          "name" : "ambient_temp_c",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "humidity_pct",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "rover_tilt_deg",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "vibration_level",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "inspection_status",
+          "dataType" : "string",
+          "nullable" : true
+        },
+        {
+          "name" : "defect_count",
+          "dataType" : "int",
+          "nullable" : true
+        },
+        {
+          "name" : "max_crack_width_mm",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "avg_crack_width_mm",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "max_crack_length_mm",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "total_crack_area_sqmm",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "shi_score",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "health_status",
+          "dataType" : "string",
+          "nullable" : true
+        },
+        {
+          "name" : "crack_penalty",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "age_penalty",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "env_penalty",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "estimated_rul_years",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "risk_level",
+          "dataType" : "string",
+          "nullable" : true
+        }
+      ]
+    },
+    "defectsDataset" : {
+      "name" : "defects_dataset.csv",
+      "path" : "C:\\project\\agile\\data\\defects_dataset.csv",
+      "rows" : 1170,
+      "columns" : 12,
+      "schema" : [
+        {
+          "name" : "defect_id",
+          "dataType" : "int",
+          "nullable" : true
+        },
+        {
+          "name" : "inspection_id",
+          "dataType" : "int",
+          "nullable" : true
+        },
+        {
+          "name" : "inspection_code",
+          "dataType" : "string",
+          "nullable" : true
+        },
+        {
+          "name" : "building_id",
+          "dataType" : "int",
+          "nullable" : true
+        },
+        {
+          "name" : "wall_code",
+          "dataType" : "string",
+          "nullable" : true
+        },
+        {
+          "name" : "defect_type",
+          "dataType" : "string",
+          "nullable" : true
+        },
+        {
+          "name" : "length_mm",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "max_width_mm",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "avg_width_mm",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "area_sqmm",
+          "dataType" : "double",
+          "nullable" : true
+        },
+        {
+          "name" : "severity",
+          "dataType" : "string",
+          "nullable" : true
+        },
+        {
+          "name" : "confidence",
+          "dataType" : "double",
+          "nullable" : true
+        }
+      ]
+    },
+    "loadTimeMs" : 4049,
+    "sampleInspections" : [
+      {
+        "max_crack_width_mm" : "6.4",
+        "shi_score" : "47.2",
+        "defect_count" : "15",
+        "building_name" : "Test Structural Facility",
+        "inspection_id" : "1",
+        "inspection_code" : "INSP-TEST-001"
+      },
+      {
+        "max_crack_width_mm" : "7.51",
+        "shi_score" : "47.2",
+        "defect_count" : "14",
+        "building_name" : "Test Structural Facility",
+        "inspection_id" : "2",
+        "inspection_code" : "INSP-TEST-1791397895"
+      },
+      {
+        "max_crack_width_mm" : "0.0",
+        "shi_score" : "NULL",
+        "defect_count" : "0",
+        "building_name" : "Test Structural Facility",
+        "inspection_id" : "3",
+        "inspection_code" : "INSP-20261007-634"
+      },
+      {
+        "max_crack_width_mm" : "5.27",
+        "shi_score" : "38.1",
+        "defect_count" : "26",
+        "building_name" : "Test Structural Facility",
+        "inspection_id" : "4",
+        "inspection_code" : "INSP-20261007-235"
+      },
+      {
+        "max_crack_width_mm" : "0.0",
+        "shi_score" : "NULL",
+        "defect_count" : "0",
+        "building_name" : "Test Structural Facility",
+        "inspection_id" : "5",
+        "inspection_code" : "INSP-20261007-170"
+      }
+    ]
+  },
+  "datasetInspectionOutput" : {
+    "inspectionsNullAudit" : [
+      {
+        "column" : "shi_score",
+        "nullCount" : 19
+      },
+      {
+        "column" : "health_status",
+        "nullCount" : 19
+      },
+      {
+        "column" : "crack_penalty",
+        "nullCount" : 19
+      },
+      {
+        "column" : "estimated_rul_years",
+        "nullCount" : 19
+      },
+      {
+        "column" : "risk_level",
+        "nullCount" : 19
+      },
+      {
+        "column" : "ambient_temp_c",
+        "nullCount" : 0
+      }
+    ],
+    "defectsNullAudit" : [
+      {
+        "column" : "max_width_mm",
+        "nullCount" : 0
+      },
+      {
+        "column" : "length_mm",
+        "nullCount" : 0
+      },
+      {
+        "column" : "area_sqmm",
+        "nullCount" : 0
+      },
+      {
+        "column" : "severity",
+        "nullCount" : 0
+      },
+      {
+        "column" : "confidence",
+        "nullCount" : 0
+      }
+    ],
+    "numericStats" : [
+      {
+        "feature" : "ambient_temp_c",
+        "min" : 25.75,
+        "max" : 29.16,
+        "mean" : 27.326,
+        "stddev" : 0.829
+      },
+      {
+        "feature" : "rover_tilt_deg",
+        "min" : 1.12,
+        "max" : 1.76,
+        "mean" : 1.349,
+        "stddev" : 0.183
+      },
+      {
+        "feature" : "vibration_level",
+        "min" : 0.08,
+        "max" : 0.148,
+        "mean" : 0.104,
+        "stddev" : 0.023
+      },
+      {
+        "feature" : "defect_count",
+        "min" : 0.0,
+        "max" : 282.0,
+        "mean" : 22.941,
+        "stddev" : 62.383
+      },
+      {
+        "feature" : "max_width_mm",
+        "min" : 1.6,
+        "max" : 21.73,
+        "mean" : 3.298,
+        "stddev" : 1.935
+      },
+      {
+        "feature" : "length_mm",
+        "min" : 2.8,
+        "max" : 1888.16,
+        "mean" : 25.863,
+        "stddev" : 97.393
+      },
+      {
+        "feature" : "area_sqmm",
+        "min" : 1.44,
+        "max" : 12485.68,
+        "mean" : 92.747,
+        "stddev" : 503.778
+      }
+    ],
+    "severityDistribution" : {
+      "CRITICAL" : 99,
+      "HIGH" : 877,
+      "MODERATE" : 194
+    },
+    "structuralTypeDistribution" : {
+      "Reinforced Concrete" : 51
+    }
+  },
+  "dataPreprocessingOutput" : {
+    "initialInspections" : 51,
+    "initialDefects" : 1170,
+    "duplicatesRemoved" : 0,
+    "missingShiImputed" : 19,
+    "missingRulImputed" : 19,
+    "vibrationOutliersFlagged" : 0,
+    "tiltOutliersFlagged" : 0,
+    "aciNonCompliantDefects" : 1170,
+    "cleanInspectionsCount" : 51,
+    "cleanDefectsCount" : 1170,
+    "stepsApplied" : [
+      "Dropped duplicate inspection_id and defect_id primary keys",
+      "Imputed 19 missing SHI records using aperture/defect penalty heuristic",
+      "Imputed 19 missing RUL forecasts from post-imputation SHI trajectory",
+      "Normalized thermal stress feature and flagged ACI 224R (>0.30mm) & vibration (>0.40g) thresholds"
+    ]
+  },
+  "sparkDataProcessingOutput" : {
+    "sparkVersion" : "3.5.3",
+    "master" : "local[*]",
+    "partitionsUsed" : 4,
+    "executionTimeMs" : 431,
+    "buildingAggregates" : [
+      {
+        "buildingId" : 1,
+        "buildingName" : "Test Structural Facility #1",
+        "wallCode" : "WALL-TEST-1",
+        "inspectionCount" : 43,
+        "totalDefects" : 1089,
+        "avgWidthMm" : 2.382,
+        "maxWidthMm" : 21.73,
+        "totalCrackAreaSqmm" : 93955.52,
+        "avgVibrationG" : 0.102,
+        "rollingMaxWidthMm" : 21.73
+      },
+      {
+        "buildingId" : 2,
+        "buildingName" : "Test Structural Facility #2",
+        "wallCode" : "WALL-TEST-1",
+        "inspectionCount" : 1,
+        "totalDefects" : 7,
+        "avgWidthMm" : 3.406,
+        "maxWidthMm" : 4.8,
+        "totalCrackAreaSqmm" : 643.84,
+        "avgVibrationG" : 0.105,
+        "rollingMaxWidthMm" : 4.8
+      },
+      {
+        "buildingId" : 3,
+        "buildingName" : "Test Structural Facility #3",
+        "wallCode" : "WALL-TEST-1",
+        "inspectionCount" : 1,
+        "totalDefects" : 14,
+        "avgWidthMm" : 3.554,
+        "maxWidthMm" : 7.51,
+        "totalCrackAreaSqmm" : 2188.64,
+        "avgVibrationG" : 0.12,
+        "rollingMaxWidthMm" : 7.51
+      },
+      {
+        "buildingId" : 4,
+        "buildingName" : "Test Structural Facility #4",
+        "wallCode" : "WALL-TEST-1",
+        "inspectionCount" : 1,
+        "totalDefects" : 13,
+        "avgWidthMm" : 3.433,
+        "maxWidthMm" : 7.83,
+        "totalCrackAreaSqmm" : 2266.96,
+        "avgVibrationG" : 0.12,
+        "rollingMaxWidthMm" : 7.83
+      },
+      {
+        "buildingId" : 5,
+        "buildingName" : "Test Structural Facility #5",
+        "wallCode" : "WALL-TEST-1",
+        "inspectionCount" : 1,
+        "totalDefects" : 16,
+        "avgWidthMm" : 3.3,
+        "maxWidthMm" : 8.0,
+        "totalCrackAreaSqmm" : 2012.0,
+        "avgVibrationG" : 0.12,
+        "rollingMaxWidthMm" : 8.0
+      },
+      {
+        "buildingId" : 6,
+        "buildingName" : "Test Structural Facility #6",
+        "wallCode" : "WALL-TEST-1",
+        "inspectionCount" : 1,
+        "totalDefects" : 16,
+        "avgWidthMm" : 3.21,
+        "maxWidthMm" : 4.8,
+        "totalCrackAreaSqmm" : 1660.16,
+        "avgVibrationG" : 0.12,
+        "rollingMaxWidthMm" : 4.8
+      },
+      {
+        "buildingId" : 7,
+        "buildingName" : "Test Structural Facility #7",
+        "wallCode" : "WALL-TEST-1",
+        "inspectionCount" : 1,
+        "totalDefects" : 10,
+        "avgWidthMm" : 3.424,
+        "maxWidthMm" : 6.24,
+        "totalCrackAreaSqmm" : 1865.68,
+        "avgVibrationG" : 0.12,
+        "rollingMaxWidthMm" : 6.24
+      },
+      {
+        "buildingId" : 8,
+        "buildingName" : "Test Structural Facility #8",
+        "wallCode" : "WALL-TEST-1",
+        "inspectionCount" : 1,
+        "totalDefects" : 3,
+        "avgWidthMm" : 4.957,
+        "maxWidthMm" : 9.59,
+        "totalCrackAreaSqmm" : 2202.16,
+        "avgVibrationG" : 0.12,
+        "rollingMaxWidthMm" : 9.59
+      },
+      {
+        "buildingId" : 9,
+        "buildingName" : "Test Structural Facility #9",
+        "wallCode" : "WALL-TEST-1",
+        "inspectionCount" : 1,
+        "totalDefects" : 2,
+        "avgWidthMm" : 5.6,
+        "maxWidthMm" : 8.8,
+        "totalCrackAreaSqmm" : 1719.2,
+        "avgVibrationG" : 0.12,
+        "rollingMaxWidthMm" : 8.8
+      }
+    ],
+    "aciComplianceRatePct" : 0.0
+  },
+  "scalaBasedAnalysisOutput" : {
+    "scalaVersion" : "2.13.14",
+    "recordsAnalyzed" : 51,
+    "defectRecordsAnalyzed" : 1170,
+    "vibrationCrackCorrelation" : 0.597,
+    "distributions" : [
+      {
+        "metric" : "Crack Width (mm)",
+        "mean" : 3.298,
+        "rms" : 3.823,
+        "p50" : 3.2,
+        "p95" : 7.2,
+        "p99" : 12.15
+      },
+      {
+        "metric" : "Crack Span Length (mm)",
+        "mean" : 25.863,
+        "rms" : 100.728,
+        "p50" : 5.61,
+        "p95" : 106.25,
+        "p99" : 542.49
+      },
+      {
+        "metric" : "Chassis Vibration (g)",
+        "mean" : 0.104,
+        "rms" : 0.107,
+        "p50" : 0.105,
+        "p95" : 0.142,
+        "p99" : 0.148
+      },
+      {
+        "metric" : "Structural Health Index",
+        "mean" : 59.647,
+        "rms" : 65.76,
+        "p50" : 47.2,
+        "p95" : 95.0,
+        "p99" : 95.0
+      }
+    ],
+    "severityWeightedRiskScore" : 58.41
+  },
+  "buildingHealthClassificationOutput" : {
+    "gradeCounts" : {
+      "Grade B" : 1,
+      "Grade C" : 8
+    },
+    "classifications" : [
+      {
+        "buildingId" : 1,
+        "buildingName" : "Test Structural Facility #1",
+        "constructionYear" : 2014,
+        "meanShi" : 61.96,
+        "minShi" : 33.4,
+        "maxCrackWidthMm" : 21.73,
+        "totalDefects" : 1089,
+        "estimatedRulYears" : 12.29,
+        "grade" : "Grade B",
+        "healthStatus" : "MODERATE",
+        "primaryRiskDriver" : "EXCESSIVE_CRACK_APERTURE (>5mm)",
+        "recommendedAction" : "Immediate structural shoring & epoxy injection"
+      },
+      {
+        "buildingId" : 2,
+        "buildingName" : "Test Structural Facility #2",
+        "constructionYear" : 2014,
+        "meanShi" : 47.2,
+        "minShi" : 47.2,
+        "maxCrackWidthMm" : 4.8,
+        "totalDefects" : 7,
+        "estimatedRulYears" : 1.6,
+        "grade" : "Grade C",
+        "healthStatus" : "CRITICAL",
+        "primaryRiskDriver" : "ACI_224R_APERTURE_BREACH (>0.30mm)",
+        "recommendedAction" : "Schedule pressurized crack sealing"
+      },
+      {
+        "buildingId" : 3,
+        "buildingName" : "Test Structural Facility #3",
+        "constructionYear" : 2014,
+        "meanShi" : 47.2,
+        "minShi" : 47.2,
+        "maxCrackWidthMm" : 7.51,
+        "totalDefects" : 14,
+        "estimatedRulYears" : 1.6,
+        "grade" : "Grade C",
+        "healthStatus" : "CRITICAL",
+        "primaryRiskDriver" : "EXCESSIVE_CRACK_APERTURE (>5mm)",
+        "recommendedAction" : "Immediate structural shoring & epoxy injection"
+      },
+      {
+        "buildingId" : 4,
+        "buildingName" : "Test Structural Facility #4",
+        "constructionYear" : 2014,
+        "meanShi" : 47.2,
+        "minShi" : 47.2,
+        "maxCrackWidthMm" : 7.83,
+        "totalDefects" : 13,
+        "estimatedRulYears" : 1.6,
+        "grade" : "Grade C",
+        "healthStatus" : "CRITICAL",
+        "primaryRiskDriver" : "EXCESSIVE_CRACK_APERTURE (>5mm)",
+        "recommendedAction" : "Immediate structural shoring & epoxy injection"
+      },
+      {
+        "buildingId" : 5,
+        "buildingName" : "Test Structural Facility #5",
+        "constructionYear" : 2014,
+        "meanShi" : 47.2,
+        "minShi" : 47.2,
+        "maxCrackWidthMm" : 8.0,
+        "totalDefects" : 16,
+        "estimatedRulYears" : 1.6,
+        "grade" : "Grade C",
+        "healthStatus" : "CRITICAL",
+        "primaryRiskDriver" : "EXCESSIVE_CRACK_APERTURE (>5mm)",
+        "recommendedAction" : "Immediate structural shoring & epoxy injection"
+      },
+      {
+        "buildingId" : 6,
+        "buildingName" : "Test Structural Facility #6",
+        "constructionYear" : 2014,
+        "meanShi" : 47.2,
+        "minShi" : 47.2,
+        "maxCrackWidthMm" : 4.8,
+        "totalDefects" : 16,
+        "estimatedRulYears" : 1.6,
+        "grade" : "Grade C",
+        "healthStatus" : "CRITICAL",
+        "primaryRiskDriver" : "ACI_224R_APERTURE_BREACH (>0.30mm)",
+        "recommendedAction" : "Schedule pressurized crack sealing"
+      },
+      {
+        "buildingId" : 7,
+        "buildingName" : "Test Structural Facility #7",
+        "constructionYear" : 2014,
+        "meanShi" : 47.2,
+        "minShi" : 47.2,
+        "maxCrackWidthMm" : 6.24,
+        "totalDefects" : 10,
+        "estimatedRulYears" : 1.6,
+        "grade" : "Grade C",
+        "healthStatus" : "CRITICAL",
+        "primaryRiskDriver" : "EXCESSIVE_CRACK_APERTURE (>5mm)",
+        "recommendedAction" : "Immediate structural shoring & epoxy injection"
+      },
+      {
+        "buildingId" : 8,
+        "buildingName" : "Test Structural Facility #8",
+        "constructionYear" : 2014,
+        "meanShi" : 47.2,
+        "minShi" : 47.2,
+        "maxCrackWidthMm" : 9.59,
+        "totalDefects" : 3,
+        "estimatedRulYears" : 1.6,
+        "grade" : "Grade C",
+        "healthStatus" : "CRITICAL",
+        "primaryRiskDriver" : "EXCESSIVE_CRACK_APERTURE (>5mm)",
+        "recommendedAction" : "Immediate structural shoring & epoxy injection"
+      },
+      {
+        "buildingId" : 9,
+        "buildingName" : "Test Structural Facility #9",
+        "constructionYear" : 2014,
+        "meanShi" : 47.2,
+        "minShi" : 47.2,
+        "maxCrackWidthMm" : 8.8,
+        "totalDefects" : 2,
+        "estimatedRulYears" : 1.6,
+        "grade" : "Grade C",
+        "healthStatus" : "CRITICAL",
+        "primaryRiskDriver" : "EXCESSIVE_CRACK_APERTURE (>5mm)",
+        "recommendedAction" : "Immediate structural shoring & epoxy injection"
+      }
+    ]
+  },
+  "finalResultGenerationOutput" : {
+    "generatedAtIso" : "2026-11-11T16:27:02.339531100Z",
+    "totalBuildingsEvaluated" : 9,
+    "totalInspectionsProcessed" : 51,
+    "totalDefectsQuantified" : 1170,
+    "fleetAverageShi" : 48.84,
+    "fleetMinRulYears" : 1.6,
+    "criticalBuildingsCount" : 8,
+    "overallFleetStatus" : "CRITICAL INTERVENTION REQUIRED",
+    "priorityBuilding" : "Test Structural Facility #2",
+    "executiveSummary" : "Processed 51 inspections and 1170 fracture contours across 9 buildings via Apache Spark 3.5.3 & Scala 2.13.14. Fleet mean SHI is 48.84/100 with 1170 ACI 224R aperture violations; 8 building(s) classified Grade C (Critical). Priority remediation: Test Structural Facility #2."
+  }
+}

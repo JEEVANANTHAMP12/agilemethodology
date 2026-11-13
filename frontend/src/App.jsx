@@ -1,16 +1,17 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
+import { Toaster } from 'sonner';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeProvider';
+import { TooltipProvider } from './components/ui/tooltip';
 import { Dashboard } from './pages/Dashboard';
-import { ThemeProvider } from './ui/theme/ThemeProvider';
-import { ToastProvider } from './ui/feedback/ToastProvider';
 
-const UiKit = lazy(() => import('./pages/UiKit').then(m => ({ default: m.UiKit })));
-const ScalaPipelinePage = lazy(() => import('./pages/ScalaPipelinePage').then(m => ({ default: m.ScalaPipelinePage })));
+const ScalaStreamPage = lazy(() =>
+  import('./pages/ScalaStreamPage').then((m) => ({ default: m.ScalaStreamPage }))
+);
 
 function readRoute() {
   const hash = window.location.hash.replace(/^#\/?/, '').trim();
-  if (hash === 'ui-kit') return 'ui-kit';
-  if (hash === 'scala' || hash === 'scala-stream') return 'scala';
+  if (hash.startsWith('scala')) return 'scala';
   return 'dashboard';
 }
 
@@ -25,21 +26,24 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <ToastProvider>
+      <TooltipProvider>
         <AuthProvider>
-          {route === 'ui-kit' ? (
-            <Suspense fallback={<div className="p-8 text-center text-slate-400">Loading UI Kit...</div>}>
-              <UiKit />
-            </Suspense>
-          ) : route === 'scala' ? (
-            <Suspense fallback={<div className="p-8 text-center text-slate-400">Loading Scala Stream Pipeline...</div>}>
-              <ScalaPipelinePage />
+          {route === 'scala' ? (
+            <Suspense
+              fallback={
+                <div className="flex min-h-screen items-center justify-center text-xs text-muted-foreground">
+                  Loading Scala Telemetry Stream...
+                </div>
+              }
+            >
+              <ScalaStreamPage />
             </Suspense>
           ) : (
             <Dashboard />
           )}
+          <Toaster position="bottom-right" richColors />
         </AuthProvider>
-      </ToastProvider>
+      </TooltipProvider>
     </ThemeProvider>
   );
 }

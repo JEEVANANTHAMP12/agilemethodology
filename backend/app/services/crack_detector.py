@@ -57,7 +57,7 @@ class CrackDetector:
                 "model_name": prediction.get("model_name", "Wall-Crack-Ensemble-v2.4")
             }
         except Exception:
-            # Fallback to classical OpenCV pipeline if ML inference raises
+            # Fallback to classical OpenCV engine if ML inference raises
             return self._classical_fallback(img, output_image_path)
 
     def _classical_fallback(self, img: np.ndarray, output_image_path: str = None) -> dict[str, Any]:

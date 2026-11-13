@@ -1,4 +1,4 @@
-# Project Analysis — Agile Rover Structural Health Platform
+﻿# Project Analysis — Agile Rover Structural Health Platform
 
 ## 1. Executive summary
 
@@ -6,7 +6,7 @@ The repository implements an end-to-end structural inspection platform:
 
 - An ESP32-CAM crawler captures concrete-wall imagery and telemetry.
 - A FastAPI backend exposes rover, inspection, image, SHI, RUL, alert, report, and dashboard APIs.
-- An OpenCV pipeline measures crack geometry in millimetres and produces annotated/heatmap outputs.
+- An OpenCV workflow measures crack geometry in millimetres and produces annotated/heatmap outputs.
 - A SHI engine converts crack, age, environmental, and historical signals into a 0–100 index.
 - A RUL predictor extrapolates degradation to a 40-point failure threshold.
 - A React 19 + Vite dashboard presents live telemetry, crack metrology, health decomposition, prognosis, alerts, and printable dossiers.
@@ -71,7 +71,7 @@ agile/
 | Reports | `GET /api/reports/inspection/{id}`, `GET /api/reports/inspection/{id}/html` |
 | Structures | building and wall list/create endpoints |
 
-### 3.3 Core processing pipeline
+### 3.3 Core processing workflow
 
 1. **Capture** — the rover uploads an image plus standoff distance and environmental telemetry.
 2. **Preprocess** — grayscale, CLAHE, bilateral denoising.

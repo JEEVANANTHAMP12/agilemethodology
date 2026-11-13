@@ -1,16 +1,16 @@
 import React from 'react';
-import { Badge } from '../ui';
-import { Bot, Activity, Crosshair, Clock } from 'lucide-react';
-import { useAnimatedNumber } from './UI/useAnimatedNumber';
+import { Activity, Bot, Clock, Crosshair } from 'lucide-react';
+import { Card, CardContent } from './ui/card';
+import { Badge } from './ui/badge';
 
 const statusVariant = (status) => {
-  if (status === 'CRITICAL') return 'danger';
+  if (status === 'CRITICAL') return 'destructive';
   if (status === 'HEALTHY') return 'success';
   return 'warning';
 };
 
 const riskVariant = (risk) => {
-  if (risk === 'Critical') return 'danger';
+  if (risk === 'Critical') return 'destructive';
   if (risk === 'High' || risk === 'Moderate') return 'warning';
   return 'success';
 };
@@ -30,91 +30,85 @@ export const TopCards = ({ data = {}, crackData = {} }) => {
   const crackWidth = crackData?.primary_width_mm ?? data?.primary_width_mm ?? 0.0;
   const crackSeverity = crackData?.primary_severity || (wall_status === 'HEALTHY' ? 'NONE' : 'MODERATE');
 
-  const animatedBattery = useAnimatedNumber(battery_percentage, 800, 0);
-  const animatedHealth = useAnimatedNumber(health_index, 800, 1);
-  const animatedRul = useAnimatedNumber(estimated_rul_years, 800, 1);
-  const animatedWidth = useAnimatedNumber(crackWidth, 800, 2);
-
-  const isHealthy = wall_status === 'HEALTHY';
-
   return (
-    <section className="dash-metric-bar" aria-label="Key Performance Indicators">
-      {/* 1. Structural Health Index */}
-      <div className="dash-metric-item">
-        <div className="dash-metric-header">
-          <Activity size={13} className="dash-metric-icon" />
-          <span className="dash-metric-label">Structural Health</span>
-        </div>
-        <div className="dash-metric-body">
-          <div className="dash-metric-val-wrap">
-            <span className="dash-metric-value">{animatedHealth}</span>
-            <span className="dash-metric-unit">/ 100 SHI</span>
+    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Key Metrics">
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Structural Health</span>
+            <Activity className="h-3.5 w-3.5" />
           </div>
-          <Badge variant={statusVariant(wall_status)} size="sm">
-            {isHealthy ? 'Grade A' : wall_status}
-          </Badge>
-        </div>
-      </div>
+          <div className="mt-2 flex items-baseline justify-between gap-2">
+            <div>
+              <span className="text-2xl font-semibold tabular-nums">{Number(health_index).toFixed(1)}</span>
+              <span className="ml-1 text-xs text-muted-foreground">/ 100 SHI</span>
+            </div>
+            <Badge variant={statusVariant(wall_status)}>
+              {wall_status === 'HEALTHY' ? 'Grade A' : wall_status}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* 2. Crack Metrology */}
-      <div className="dash-metric-item">
-        <div className="dash-metric-header">
-          <Crosshair size={13} className="dash-metric-icon" />
-          <span className="dash-metric-label">Max Aperture</span>
-        </div>
-        <div className="dash-metric-body">
-          <div className="dash-metric-val-wrap">
-            <span className="dash-metric-value">{animatedWidth}</span>
-            <span className="dash-metric-unit">mm</span>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Max Aperture</span>
+            <Crosshair className="h-3.5 w-3.5" />
           </div>
-          <Badge
-            variant={
-              crackSeverity === 'CRITICAL'
-                ? 'danger'
-                : crackSeverity === 'HIGH' || crackSeverity === 'MODERATE'
-                ? 'warning'
-                : 'success'
-            }
-            size="sm"
-          >
-            {crackSeverity}
-          </Badge>
-        </div>
-      </div>
+          <div className="mt-2 flex items-baseline justify-between gap-2">
+            <div>
+              <span className="text-2xl font-semibold tabular-nums">{Number(crackWidth).toFixed(2)}</span>
+              <span className="ml-1 text-xs text-muted-foreground">mm</span>
+            </div>
+            <Badge
+              variant={
+                crackSeverity === 'CRITICAL'
+                  ? 'destructive'
+                  : crackSeverity === 'HIGH' || crackSeverity === 'MODERATE'
+                  ? 'warning'
+                  : 'success'
+              }
+            >
+              {crackSeverity}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* 3. Forecast Prognosis */}
-      <div className="dash-metric-item">
-        <div className="dash-metric-header">
-          <Clock size={13} className="dash-metric-icon" />
-          <span className="dash-metric-label">Prognosis RUL</span>
-        </div>
-        <div className="dash-metric-body">
-          <div className="dash-metric-val-wrap">
-            <span className="dash-metric-value">{animatedRul}</span>
-            <span className="dash-metric-unit">years</span>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Prognosis RUL</span>
+            <Clock className="h-3.5 w-3.5" />
           </div>
-          <Badge variant={riskVariant(risk_level)} size="sm">
-            {risk_level} Risk
-          </Badge>
-        </div>
-      </div>
+          <div className="mt-2 flex items-baseline justify-between gap-2">
+            <div>
+              <span className="text-2xl font-semibold tabular-nums">{Number(estimated_rul_years).toFixed(1)}</span>
+              <span className="ml-1 text-xs text-muted-foreground">years</span>
+            </div>
+            <Badge variant={riskVariant(risk_level)}>{risk_level} Risk</Badge>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* 4. Crawler Telemetry */}
-      <div className="dash-metric-item">
-        <div className="dash-metric-header">
-          <Bot size={13} className="dash-metric-icon" />
-          <span className="dash-metric-label">{rover_code} Link</span>
-        </div>
-        <div className="dash-metric-body">
-          <div className="dash-metric-val-wrap">
-            <span className="dash-metric-value">{animatedBattery}%</span>
-            <span className="dash-metric-unit">power</span>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{rover_code} Link</span>
+            <Bot className="h-3.5 w-3.5" />
           </div>
-          <Badge variant={rover_status === 'CONNECTED' ? 'success' : 'danger'} size="sm" dot>
-            {wifi_signal_dbm} dBm
-          </Badge>
-        </div>
-      </div>
+          <div className="mt-2 flex items-baseline justify-between gap-2">
+            <div>
+              <span className="text-2xl font-semibold tabular-nums">{Math.round(Number(battery_percentage))}%</span>
+              <span className="ml-1 text-xs text-muted-foreground">power</span>
+            </div>
+            <Badge variant={rover_status === 'CONNECTED' ? 'success' : 'destructive'}>
+              {wifi_signal_dbm} dBm
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
     </section>
   );
 };

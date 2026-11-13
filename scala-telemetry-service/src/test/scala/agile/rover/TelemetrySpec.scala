@@ -1,7 +1,7 @@
 package agile.rover
 
 import agile.rover.model.*
-import agile.rover.stream.TelemetryStreamPipeline
+import agile.rover.stream.TelemetryStreamEngine
 import io.circe.parser.decode
 import io.circe.syntax.*
 import munit.FunSuite
@@ -9,6 +9,8 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 class TelemetrySpec extends FunSuite {
+  // Initialize SLF4J synchronously before ActorSystem starts threads
+  org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
 
   test("RoverTelemetry decodes camelCase JSON correctly") {
     val json =
@@ -80,9 +82,9 @@ class TelemetrySpec extends FunSuite {
     assert(jsonStr.contains("\"vibration_level\":0.11"))
   }
 
-  test("TelemetryStreamPipeline computes correct aggregates and detects tilt anomaly") {
+  test("TelemetryStreamEngine computes correct aggregates and detects tilt anomaly") {
     given system: ActorSystem[Any] = ActorSystem(Behaviors.empty, "test-system")
-    val pipeline = new TelemetryStreamPipeline(windowSize = 3)
+    val engine = new TelemetryStreamEngine(windowSize = 3)
 
     val samples = List(
       RoverTelemetry(roverCode = "ROVER-01", ambientTempC = 20.0, humidityPct = 50.0, roverTiltDeg = 1.0, vibrationLevel = 0.10, wifiSignalDbm = -50, batteryPercentage = 80.0),
@@ -90,53 +92,53 @@ class TelemetrySpec extends FunSuite {
       RoverTelemetry(roverCode = "ROVER-01", ambientTempC = 24.0, humidityPct = 54.0, roverTiltDeg = 6.2, vibrationLevel = 0.10, wifiSignalDbm = -54, batteryPercentage = 80.0)
     )
 
-    val agg = pipeline.processWindow(samples)
+    val agg = engine.processWindow(samples)
     assertEquals(agg.roverCode, "ROVER-01")
     assertEquals(agg.avgTempC, 22.0)
     assertEquals(agg.avgHumidityPct, 52.0)
     assertEquals(agg.maxTiltDeg, 6.2)
     assert(agg.anomalyDetected, "Anomaly should be flagged when tilt > 5.0 deg")
 
-    val stats = pipeline.getStats
+    val stats = engine.getStats
     assert(stats.activeAlerts.exists(_.alertType == "TILT_THRESHOLD_BREACH"))
 
     system.terminate()
   }
 
-  test("TelemetryStreamPipeline detects vibration RMS anomaly") {
+  test("TelemetryStreamEngine detects vibration RMS anomaly") {
     given system: ActorSystem[Any] = ActorSystem(Behaviors.empty, "test-system-vib")
-    val pipeline = new TelemetryStreamPipeline(windowSize = 2)
+    val engine = new TelemetryStreamEngine(windowSize = 2)
 
     val samples = List(
       RoverTelemetry(roverCode = "ROVER-01", ambientTempC = 25.0, humidityPct = 50.0, roverTiltDeg = 1.0, vibrationLevel = 0.50, wifiSignalDbm = -50, batteryPercentage = 75.0),
       RoverTelemetry(roverCode = "ROVER-01", ambientTempC = 25.0, humidityPct = 50.0, roverTiltDeg = 1.0, vibrationLevel = 0.45, wifiSignalDbm = -50, batteryPercentage = 75.0)
     )
 
-    val agg = pipeline.processWindow(samples)
+    val agg = engine.processWindow(samples)
     assert(agg.anomalyDetected)
     assert(agg.rmsVibration > 0.40)
 
-    val stats = pipeline.getStats
+    val stats = engine.getStats
     assert(stats.activeAlerts.exists(_.alertType == "HIGH_VIBRATION_RMS"))
 
     system.terminate()
   }
 
-  test("TelemetryStreamPipeline detects low battery and thermal overheat anomalies") {
+  test("TelemetryStreamEngine detects low battery and thermal overheat anomalies") {
     given system: ActorSystem[Any] = ActorSystem(Behaviors.empty, "test-system-batt-temp")
-    val pipeline = new TelemetryStreamPipeline(windowSize = 2)
+    val engine = new TelemetryStreamEngine(windowSize = 2)
 
     val samples = List(
       RoverTelemetry(roverCode = "ROVER-01", ambientTempC = 48.0, humidityPct = 50.0, roverTiltDeg = 1.0, vibrationLevel = 0.10, wifiSignalDbm = -50, batteryPercentage = 12.5),
       RoverTelemetry(roverCode = "ROVER-01", ambientTempC = 49.0, humidityPct = 50.0, roverTiltDeg = 1.0, vibrationLevel = 0.10, wifiSignalDbm = -50, batteryPercentage = 12.0)
     )
 
-    val agg = pipeline.processWindow(samples)
+    val agg = engine.processWindow(samples)
     assert(agg.anomalyDetected)
     assertEquals(agg.avgTempC, 48.5)
     assertEquals(agg.currentBatteryPct, 12.0)
 
-    val stats = pipeline.getStats
+    val stats = engine.getStats
     assert(stats.activeAlerts.exists(_.alertType == "LOW_BATTERY_RESERVE"), "Should trigger LOW_BATTERY_RESERVE for < 15.0%")
     assert(stats.activeAlerts.exists(_.alertType == "THERMAL_OVERHEAT"), "Should trigger THERMAL_OVERHEAT for > 45.0C")
 

@@ -1,27 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
+import { Bot, Crosshair, Activity, Cpu, ChevronRight, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Navbar } from '../components/Navbar';
 import { TopCards } from '../components/TopCards';
 import { LiveInspection } from '../components/LiveInspection';
 import { CrackAnalysis } from '../components/CrackAnalysis';
 import { HealthAndReportsView } from '../components/HealthAndReportsView';
-import {
-  Alert,
-  Button,
-  Spinner,
-  useTheme,
-  useToast,
-} from '../ui';
-import {
-  Bot,
-  Crosshair,
-  Activity,
-  Cpu,
-  ChevronRight
-} from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Alert, AlertTitle, AlertDescription } from '../components/ui/alert';
+import { useTheme } from '../context/themeContextDef';
 import { api } from '../services/api';
-import './Dashboard.css';
 
-const ScalaStreamView = lazy(() => import('../components/ScalaStreamView').then(m => ({ default: m.ScalaStreamView })));
+const ScalaStreamPanel = lazy(() =>
+  import('../components/ScalaStreamPanel').then((m) => ({ default: m.ScalaStreamPanel }))
+);
 
 function getInitialTab() {
   const hash = window.location.hash.replace(/^#\/?/, '').trim();
@@ -42,55 +34,42 @@ export const Dashboard = () => {
   const [demoRunning, setDemoRunning] = useState(false);
   const prevInspectionIdRef = useRef(null);
   const { theme, toggleTheme } = useTheme();
-  const toast = useToast();
 
-  const fetchOverview = useCallback(
-    async (showSyncIndicator = false) => {
-      if (showSyncIndicator) setIsSyncing(true);
-      try {
-        const data = await api.dashboard.getOverview();
-        setDashboardData(data);
-        setLastSyncTime(new Date().toLocaleTimeString());
+  const fetchOverview = useCallback(async (showSyncIndicator = false) => {
+    if (showSyncIndicator) setIsSyncing(true);
+    try {
+      const data = await api.dashboard.getOverview();
+      setDashboardData(data);
+      setLastSyncTime(new Date().toLocaleTimeString());
 
-        const currentInspId = data?.live_inspection?.inspection_id;
-        if (prevInspectionIdRef.current && currentInspId && currentInspId !== prevInspectionIdRef.current) {
-          const primarySeverity = data?.crack_analysis?.primary_severity || 'INSPECTED';
-          setRealtimeNotification(
-            `New inspection synced: ${primarySeverity} crack profile registered · SHI ${data?.top_cards?.health_index || 0} pts`
-          );
-          window.setTimeout(() => setRealtimeNotification(null), 5000);
-        }
-        prevInspectionIdRef.current = currentInspId;
-      } catch (err) {
-        console.error('Failed to query real-time dashboard telemetry:', err);
-        if (showSyncIndicator) {
-          toast.error(err.message || 'Unable to reach the inspection API.', { title: 'Telemetry unavailable' });
-        }
-      } finally {
-        setLoading(false);
-        if (showSyncIndicator) {
-          window.setTimeout(() => setIsSyncing(false), 300);
-        }
+      const currentInspId = data?.live_inspection?.inspection_id;
+      if (prevInspectionIdRef.current && currentInspId && currentInspId !== prevInspectionIdRef.current) {
+        const primarySeverity = data?.crack_analysis?.primary_severity || 'INSPECTED';
+        setRealtimeNotification(
+          `Inspection synced: ${primarySeverity} profile · SHI ${data?.top_cards?.health_index || 0} pts`
+        );
+        window.setTimeout(() => setRealtimeNotification(null), 5000);
       }
-    },
-    [toast]
-  );
+      prevInspectionIdRef.current = currentInspId;
+    } catch (err) {
+      if (showSyncIndicator) {
+        toast.error(err.message || 'Unable to reach inspection API');
+      }
+    } finally {
+      setLoading(false);
+      if (showSyncIndicator) {
+        window.setTimeout(() => setIsSyncing(false), 250);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchOverview(false);
-    }, 0);
+    const t = window.setTimeout(() => fetchOverview(false), 0);
+    if (pollingRate <= 0) return () => window.clearTimeout(t);
 
-    if (pollingRate <= 0) {
-      return () => clearTimeout(timer);
-    }
-
-    const interval = window.setInterval(() => {
-      fetchOverview(false);
-    }, pollingRate);
-
+    const interval = window.setInterval(() => fetchOverview(false), pollingRate);
     return () => {
-      clearTimeout(timer);
+      window.clearTimeout(t);
       window.clearInterval(interval);
     };
   }, [fetchOverview, pollingRate]);
@@ -98,15 +77,10 @@ export const Dashboard = () => {
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.replace(/^#\/?/, '').trim();
-      if (hash === 'scala' || hash === 'scala-stream') {
-        setActiveTab('scala_stream');
-      } else if (hash === 'inspection') {
-        setActiveTab('inspection');
-      } else if (hash === 'health' || hash === 'health-reports') {
-        setActiveTab('health_reports');
-      } else if (hash === 'live') {
-        setActiveTab('live');
-      }
+      if (hash === 'scala' || hash === 'scala-stream') setActiveTab('scala_stream');
+      else if (hash === 'inspection') setActiveTab('inspection');
+      else if (hash === 'health' || hash === 'health-reports') setActiveTab('health_reports');
+      else if (hash === 'live') setActiveTab('live');
     };
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
@@ -118,9 +92,9 @@ export const Dashboard = () => {
       await api.rover.simulateScan('HIGH');
       await fetchOverview(true);
       setActiveTab('inspection');
-      toast.success('Synthetic HIGH-severity scan registered.', { title: 'Simulation complete' });
+      toast.success('Simulated HIGH-severity inspection scan recorded');
     } catch (err) {
-      toast.error(err.message || 'The simulation could not be started.', { title: 'Simulation failed' });
+      toast.error(err.message || 'Simulation failed');
     } finally {
       setDemoRunning(false);
     }
@@ -128,12 +102,9 @@ export const Dashboard = () => {
 
   if (loading && !dashboardData) {
     return (
-      <div className="ui-app dash-loading">
-        <Spinner size="lg" />
-        <div>
-          <div className="dash-loading__title">Synchronizing autonomous crawler telemetry</div>
-          <div className="dash-loading__subtitle">Loading vision models and structural records…</div>
-        </div>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-foreground">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="text-sm font-medium">Loading structural inspection telemetry...</div>
       </div>
     );
   }
@@ -150,30 +121,25 @@ export const Dashboard = () => {
   const unackAlertsCount = alerts.filter((a) => !a.is_acknowledged).length;
 
   const tabs = [
-    { id: 'live', label: 'Live', icon: <Bot size={15} /> },
-    { id: 'inspection', label: 'Inspection', icon: <Crosshair size={15} /> },
+    { id: 'live', label: 'Live', icon: <Bot className="h-3.5 w-3.5" /> },
+    { id: 'inspection', label: 'Inspection', icon: <Crosshair className="h-3.5 w-3.5" /> },
     {
       id: 'health_reports',
       label: 'Health & Reports',
-      icon: <Activity size={15} />,
+      icon: <Activity className="h-3.5 w-3.5" />,
       badge: unackAlertsCount > 0 ? unackAlertsCount : null,
     },
-    {
-      id: 'scala_pipeline',
-      label: 'Scala Pipeline',
-      icon: <Cpu size={15} />,
-    },
+    { id: 'scala_stream', label: 'Scala Stream', icon: <Cpu className="h-3.5 w-3.5" /> },
   ];
 
   return (
-    <div className="ui-app dash">
-      {/* 1. Slim, Elegant Navbar */}
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Navbar
         roverStatus={top_cards.rover_status}
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={(tabId) => {
-          if (tabId === 'scala_pipeline') {
+          if (tabId === 'scala_stream') {
             window.location.hash = '#/scala';
           } else {
             setActiveTab(tabId);
@@ -185,81 +151,67 @@ export const Dashboard = () => {
         onToggleTheme={toggleTheme}
       />
 
-      <main className="ui-main dash__main">
+      <main className="mx-auto w-full max-w-7xl flex-1 space-y-4 px-4 py-5 sm:px-6">
         {realtimeNotification && (
-          <Alert variant="success" title="Telemetry updated" className="dash__notification">
-            <div className="dash__notification-row">
-              <span>{realtimeNotification}</span>
-              <button
-                type="button"
-                className="dash__notification-close"
-                onClick={() => setRealtimeNotification(null)}
-                aria-label="Dismiss notification"
-              >
-                ×
-              </button>
+          <Alert variant="success" className="flex items-center justify-between">
+            <div>
+              <AlertTitle>Telemetry Updated</AlertTitle>
+              <AlertDescription>{realtimeNotification}</AlertDescription>
             </div>
+            <Button variant="ghost" size="sm" onClick={() => setRealtimeNotification(null)}>
+              Dismiss
+            </Button>
           </Alert>
         )}
 
-        {/* 2. 1 Slim Breadcrumb Header (< 44px) */}
-        <section className="dash-breadcrumb" aria-label="Current facade context">
-          <div className="dash-breadcrumb__left">
-            <span className="dash-breadcrumb__structure">
-              {live_inspection.wall_name || 'North Bearing Facade'}
-            </span>
-            <ChevronRight size={13} className="dash-breadcrumb__chevron" />
-            <span className="dash-breadcrumb__spec">C35 Concrete · Standoff 250mm · 2.50 px/mm</span>
-            <span className="dash-breadcrumb__divider">|</span>
-            <span className="dash-breadcrumb__crawler">
-              <span className="ui-live-dot" />
-              <span>ROVER-01 · {top_cards.rover_status === 'CONNECTED' ? 'Active' : top_cards.rover_status}</span>
+        {/* Context Bar */}
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-2.5 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold">{live_inspection.wall_name || 'North Bearing Facade'}</span>
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-muted-foreground">C35 Concrete · 250mm standoff · 2.50 px/mm</span>
+            <span className="hidden text-border sm:inline">|</span>
+            <span className="text-muted-foreground">
+              ROVER-01 · {top_cards.rover_status === 'CONNECTED' ? 'Active' : top_cards.rover_status}
             </span>
           </div>
 
-          <div className="dash-breadcrumb__right">
-            <Button
-              variant="secondary"
-              size="sm"
-              loading={demoRunning}
-              icon={<Cpu size={13} />}
-              onClick={handleQuickDemoScan}
-            >
-              Simulate Scan
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" size="sm" loading={demoRunning} onClick={handleQuickDemoScan}>
+              <Cpu className="h-3.5 w-3.5" />
+              <span>Simulate Scan</span>
             </Button>
 
-            <button
-              type="button"
-              className="dash-breadcrumb__rate-btn"
-              onClick={() => setPollingRate(prev => (prev === 3000 ? 1000 : prev === 1000 ? 5000 : prev === 5000 ? 0 : 3000))}
-              title="Click to toggle telemetry polling cadence"
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setPollingRate((prev) => (prev === 3000 ? 1000 : prev === 1000 ? 5000 : prev === 5000 ? 0 : 3000))
+              }
             >
               Cadence: {pollingRate === 0 ? 'Paused' : `${pollingRate / 1000}s`}
-            </button>
+            </Button>
 
-            <a
-              href="#/scala"
-              className="dash-breadcrumb__rate-btn"
-              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-              title="Open dedicated Scala 3 / Apache Pekko live stream engine console"
-            >
-              <Cpu size={12} />
-              <span>Scala Engine (8090)</span>
-            </a>
+            <Button variant="outline" size="sm" asChild>
+              <a href="#/scala">
+                <Cpu className="h-3.5 w-3.5" />
+                <span>Scala Console</span>
+              </a>
+            </Button>
 
             {lastSyncTime && (
-              <span className="dash-breadcrumb__sync">
+              <span className="font-mono text-[11px] text-muted-foreground">
                 Synced {lastSyncTime}
               </span>
             )}
           </div>
         </section>
 
-        {/* 3. 1 Slim Metric Bar (< 70px) */}
+        {/* KPI Bar */}
         <TopCards data={top_cards} crackData={crack_analysis} />
 
-        {/* 4. Tab Workspace Content */}
-        <div key={activeTab} className="tab-content-enter dash-workspace">
+        {/* Active Workspace */}
+        <div>
           {activeTab === 'live' && (
             <LiveInspection
               inspectionData={live_inspection}
@@ -286,23 +238,20 @@ export const Dashboard = () => {
           )}
 
           {activeTab === 'scala_stream' && (
-            <Suspense fallback={<div className="p-8 text-center text-slate-400">Loading Scala Stream Engine…</div>}>
-              <ScalaStreamView
-                onActionComplete={() => fetchOverview(true)}
-              />
+            <Suspense fallback={<div className="py-10 text-center text-xs text-muted-foreground">Loading Scala Stream Engine...</div>}>
+              <ScalaStreamPanel onActionComplete={() => fetchOverview(true)} />
             </Suspense>
           )}
         </div>
       </main>
 
-      <footer className="ui-footer">
-        <div className="ui-footer__inner">
-          <span>Agile Rover · Autonomous Structural Intelligence &amp; Metrology</span>
-          <span className="dash__footer-right">
-            <a href="#/scala">Scala Stream</a>
-            <a href="#/ui-kit">UI Kit</a>
-            <span>ISO 1920 / ACI 224R Compliant</span>
-          </span>
+      <footer className="border-t py-4 text-xs text-muted-foreground">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 sm:px-6">
+          <span>Agile Rover · Structural Inspection &amp; Metrology</span>
+          <div className="flex items-center gap-4">
+            <a href="#/scala" className="hover:text-foreground">Scala Stream</a>
+            <span>ISO 1920 / ACI 224R</span>
+          </div>
         </div>
       </footer>
     </div>

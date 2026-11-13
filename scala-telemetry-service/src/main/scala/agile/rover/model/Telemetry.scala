@@ -182,13 +182,14 @@ object AnomalyAlert {
 /**
  * Summary status snapshot returned by the Scala telemetry engine.
  */
-final case class PipelineStats(
+final case class StreamEngineStats(
   engine: String = "Apache-Pekko-Scala3-Stream-Engine",
   status: String = "RUNNING",
   totalIngestedCount: Long,
   activeSubscribers: Int,
   historyCount: Int,
   lastAggregation: Option[AggregatedTelemetry],
+  latestRawTelemetry: Option[RoverTelemetry],
   activeAlerts: List[AnomalyAlert],
   uptimeSeconds: Long
 ) derives Codec.AsObject

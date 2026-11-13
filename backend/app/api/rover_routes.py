@@ -71,7 +71,7 @@ def update_telemetry(data: RoverTelemetryUpdate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(rover)
 
-    # Relay telemetry packet to Scala reactive stream pipeline
+    # Relay telemetry packet to Scala reactive stream engine
     try:
         from app.config import settings
         import httpx

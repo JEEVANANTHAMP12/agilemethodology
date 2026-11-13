@@ -1,64 +1,47 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Badge } from './UI/Components';
-import {
-  ArrowUp as IconArrowUp,
-  ArrowDown as IconArrowDown,
-  ArrowLeft as IconArrowLeft,
-  ArrowRight as IconArrowRight,
-  Square as IconSquare
-} from 'lucide-react';
-import { DesignTokens } from '../tokens';
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Square } from 'lucide-react';
+import { Card, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { cn } from '../lib/utils';
 
-export const RoverTeleopPad = ({
-  roverCode: _roverCode = 'ROVER-01',
-  roverStatus = 'CONNECTED',
-  batteryPercentage: _batteryPercentage = 95,
-  wifiSignal: _wifiSignal = -54,
-  onCommand
-}) => {
+const SPEED_MODES = [
+  { id: 'SLOW', label: '0.2 m/s' },
+  { id: 'NORMAL', label: '0.6 m/s' },
+  { id: 'TURBO', label: '1.2 m/s' },
+];
+
+export const RoverTeleopPad = ({ roverStatus = 'CONNECTED', onCommand }) => {
   const [activeDirection, setActiveDirection] = useState(null);
-  const [speedMode, setSpeedMode] = useState('NORMAL'); // 'SLOW', 'NORMAL', 'TURBO'
+  const [speedMode, setSpeedMode] = useState('NORMAL');
   const [headlightsOn, setHeadlightsOn] = useState(true);
   const [laserGuideOn, setLaserGuideOn] = useState(true);
   const [compassHeading, setCompassHeading] = useState(42);
-  const [commandLog, setCommandLog] = useState([
-    { id: 1, text: 'Telemetry Link Verified · Ping 14ms', time: '18:20:00' },
-    { id: 2, text: 'Heading Locked at 042° Azimuth', time: '18:20:04' }
-  ]);
+  const [commandLog, setCommandLog] = useState([]);
 
-  const sendRoverCommand = useCallback((cmd, param = '') => {
-    setActiveDirection(cmd);
-    const timeStr = new Date().toLocaleTimeString();
-    const newLog = {
-      id: Date.now(),
-      text: `CMD: ${cmd} ${param ? `[${param}]` : ''} · ACK OK`,
-      time: timeStr
-    };
-    setCommandLog(prev => [newLog, ...prev.slice(0, 4)]);
+  const sendRoverCommand = useCallback(
+    (cmd, param = '') => {
+      setActiveDirection(cmd);
+      setCommandLog((prev) => [
+        { id: Date.now(), text: `${cmd}${param ? ` (${param})` : ''}`, time: new Date().toLocaleTimeString() },
+        ...prev.slice(0, 6),
+      ]);
 
-    // Update simulated heading on turn
-    if (cmd === 'LEFT') {
-      setCompassHeading(prev => (prev - 15 + 360) % 360);
-    } else if (cmd === 'RIGHT') {
-      setCompassHeading(prev => (prev + 15) % 360);
-    }
+      if (cmd === 'LEFT') {
+        setCompassHeading((prev) => (prev - 15 + 360) % 360);
+      } else if (cmd === 'RIGHT') {
+        setCompassHeading((prev) => (prev + 15) % 360);
+      }
 
-    if (onCommand) onCommand(cmd, param);
+      if (onCommand) onCommand(cmd, param);
+      window.setTimeout(() => setActiveDirection(null), cmd === 'STOP' ? 150 : 280);
+    },
+    [onCommand]
+  );
 
-    // Release active direction visual after short duration
-    if (cmd !== 'STOP') {
-      setTimeout(() => setActiveDirection(null), 300);
-    } else {
-      setTimeout(() => setActiveDirection(null), 150);
-    }
-  }, [onCommand]);
-
-  // Keyboard controls listener (WASD and Arrow Keys)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Don't intercept when user is typing in inputs
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
-
       switch (e.key) {
         case 'ArrowUp':
         case 'w':
@@ -92,7 +75,6 @@ export const RoverTeleopPad = ({
           break;
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [sendRoverCommand, speedMode]);
@@ -100,381 +82,167 @@ export const RoverTeleopPad = ({
   const isConnected = roverStatus === 'CONNECTED';
 
   return (
-    <div style={{
-      background: 'var(--surface-alt)',
-      border: '1px solid var(--border)',
-      borderRadius: '10px',
-      padding: '18px 20px',
-      marginBottom: '20px',
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-      gap: '20px',
-      alignItems: 'center'
-    }}>
-      {/* 1. D-Pad Directional Flight Controls */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          width: '100%',
-          alignItems: 'center',
-          marginBottom: '12px'
-        }}>
-          <span style={{
-            fontSize: '11px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            color: 'var(--text-secondary)'
-          }}>
-            Crawler Teleoperation
-          </span>
-          <span style={{
-            fontSize: '10px',
-            fontFamily: DesignTokens.typography.mono,
-            color: 'var(--text-muted)'
-          }}>
-            KEYS: WASD / ARROWS
-          </span>
-        </div>
+    <Card>
+      <CardContent className="grid grid-cols-1 gap-6 p-5 md:grid-cols-3">
+        {/* Directional Controls */}
+        <div className="flex flex-col items-center justify-between space-y-3">
+          <div className="flex w-full items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Teleoperation
+            </span>
+            <span className="font-mono text-[10px] text-muted-foreground">WASD / Arrows</span>
+          </div>
 
-        {/* Tactile D-PAD Cluster */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 48px)',
-          gridTemplateRows: 'repeat(3, 48px)',
-          gap: '8px',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
-          {/* Top: Forward */}
-          <div style={{ gridColumn: '2', gridRow: '1' }}>
-            <button
-              type="button"
+          <div className="grid grid-cols-3 gap-2">
+            <div />
+            <Button
+              variant={activeDirection === 'FORWARD' ? 'default' : 'outline'}
+              size="icon"
+              className="h-11 w-11"
               onClick={() => sendRoverCommand('FORWARD', speedMode)}
-              title="Drive Forward (W / Up)"
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '8px',
-                background: activeDirection === 'FORWARD' ? 'var(--accent-cyan)' : 'var(--surface)',
-                color: activeDirection === 'FORWARD' ? 'var(--text-on-accent)' : 'var(--text-primary)',
-                border: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-subtle)',
-                transition: 'all 0.1s ease'
-              }}
+              aria-label="Drive Forward"
             >
-              <IconArrowUp size={20} />
-            </button>
-          </div>
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+            <div />
 
-          {/* Left: Pivot Left */}
-          <div style={{ gridColumn: '1', gridRow: '2' }}>
-            <button
-              type="button"
+            <Button
+              variant={activeDirection === 'LEFT' ? 'default' : 'outline'}
+              size="icon"
+              className="h-11 w-11"
               onClick={() => sendRoverCommand('LEFT', '15°')}
-              title="Pivot Left (A / Left)"
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '8px',
-                background: activeDirection === 'LEFT' ? 'var(--accent-cyan)' : 'var(--surface)',
-                color: activeDirection === 'LEFT' ? 'var(--text-on-accent)' : 'var(--text-primary)',
-                border: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-subtle)',
-                transition: 'all 0.1s ease'
-              }}
+              aria-label="Pivot Left"
             >
-              <IconArrowLeft size={20} />
-            </button>
-          </div>
-
-          {/* Center: Emergency Brake */}
-          <div style={{ gridColumn: '2', gridRow: '2' }}>
-            <button
-              type="button"
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={activeDirection === 'STOP' ? 'destructive' : 'outline'}
+              size="icon"
+              className="h-11 w-11 border-red-500/40 text-red-500 hover:bg-red-500/10"
               onClick={() => sendRoverCommand('STOP', 'BRAKE')}
-              title="Emergency Stop (Spacebar)"
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '8px',
-                background: activeDirection === 'STOP' ? 'var(--accent-red)' : 'var(--surface)',
-                color: activeDirection === 'STOP' ? '#FFFFFF' : 'var(--accent-red)',
-                border: '1px solid rgba(239, 68, 68, 0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-subtle)',
-                transition: 'all 0.1s ease'
-              }}
+              aria-label="Emergency Stop"
             >
-              <IconSquare size={16} />
-            </button>
-          </div>
-
-          {/* Right: Pivot Right */}
-          <div style={{ gridColumn: '3', gridRow: '2' }}>
-            <button
-              type="button"
+              <Square className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={activeDirection === 'RIGHT' ? 'default' : 'outline'}
+              size="icon"
+              className="h-11 w-11"
               onClick={() => sendRoverCommand('RIGHT', '15°')}
-              title="Pivot Right (D / Right)"
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '8px',
-                background: activeDirection === 'RIGHT' ? 'var(--accent-cyan)' : 'var(--surface)',
-                color: activeDirection === 'RIGHT' ? 'var(--text-on-accent)' : 'var(--text-primary)',
-                border: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-subtle)',
-                transition: 'all 0.1s ease'
-              }}
+              aria-label="Pivot Right"
             >
-              <IconArrowRight size={20} />
-            </button>
-          </div>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
 
-          {/* Bottom: Reverse */}
-          <div style={{ gridColumn: '2', gridRow: '3' }}>
-            <button
-              type="button"
+            <div />
+            <Button
+              variant={activeDirection === 'REVERSE' ? 'default' : 'outline'}
+              size="icon"
+              className="h-11 w-11"
               onClick={() => sendRoverCommand('REVERSE', speedMode)}
-              title="Drive Reverse (S / Down)"
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '8px',
-                background: activeDirection === 'REVERSE' ? 'var(--accent-cyan)' : 'var(--surface)',
-                color: activeDirection === 'REVERSE' ? 'var(--text-on-accent)' : 'var(--text-primary)',
-                border: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-subtle)',
-                transition: 'all 0.1s ease'
-              }}
+              aria-label="Drive Reverse"
             >
-              <IconArrowDown size={20} />
-            </button>
+              <ArrowDown className="h-4 w-4" />
+            </Button>
+            <div />
+          </div>
+
+          <div className="inline-flex rounded-md border bg-muted p-0.5">
+            {SPEED_MODES.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setSpeedMode(s.id)}
+                className={cn(
+                  'rounded-sm px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer',
+                  speedMode === s.id
+                    ? 'bg-background text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {s.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Speed / Throttle Selector */}
-        <div style={{
-          display: 'flex',
-          gap: '4px',
-          marginTop: '14px',
-          background: 'var(--surface)',
-          padding: '3px',
-          borderRadius: '6px',
-          border: '1px solid var(--border)'
-        }}>
-          {[
-            { id: 'SLOW', label: 'Precision (0.2 m/s)' },
-            { id: 'NORMAL', label: 'Nominal (0.6 m/s)' },
-            { id: 'TURBO', label: 'Traverse (1.2 m/s)' }
-          ].map(s => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setSpeedMode(s.id)}
+        {/* Azimuth & Optical Auxiliary */}
+        <div className="flex flex-col items-center justify-between space-y-3">
+          <div className="flex w-full items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Heading
+            </span>
+            <Badge variant="info" className="font-mono tabular-nums">
+              {compassHeading.toString().padStart(3, '0')}°
+            </Badge>
+          </div>
+
+          <svg width="110" height="110" viewBox="0 0 130 130" aria-label="Compass heading">
+            <circle cx="65" cy="65" r="56" fill="none" stroke="var(--border)" strokeWidth="2" />
+            <text x="65" y="24" textAnchor="middle" fill="#ef4444" fontSize="10" fontWeight="700">N</text>
+            <text x="110" y="69" textAnchor="middle" fill="var(--muted-foreground)" fontSize="9">E</text>
+            <text x="65" y="114" textAnchor="middle" fill="var(--muted-foreground)" fontSize="9">S</text>
+            <text x="20" y="69" textAnchor="middle" fill="var(--muted-foreground)" fontSize="9">W</text>
+            <g
               style={{
-                padding: '4px 8px',
-                fontSize: '10px',
-                fontWeight: 600,
-                borderRadius: '4px',
-                background: speedMode === s.id ? 'var(--text-primary)' : 'transparent',
-                color: speedMode === s.id ? 'var(--canvas)' : 'var(--text-secondary)',
-                border: 'none',
-                cursor: 'pointer'
+                transform: `rotate(${compassHeading}deg)`,
+                transformOrigin: '65px 65px',
+                transition: 'transform 0.3s ease-out',
               }}
             >
-              {s.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 2. Interactive Compass Azimuth & Horizon Heading */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          width: '100%',
-          alignItems: 'center',
-          marginBottom: '8px'
-        }}>
-          <span style={{
-            fontSize: '11px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            color: 'var(--text-secondary)'
-          }}>
-            Azimuth & Heading
-          </span>
-          <Badge variant="info" size="sm">
-            {compassHeading.toString().padStart(3, '0')}&deg; NNE
-          </Badge>
-        </div>
-
-        {/* SVG Compass Rose with Rotating Needle */}
-        <div style={{ position: 'relative', width: '130px', height: '130px', margin: '4px 0' }}>
-          <svg width="130" height="130" viewBox="0 0 130 130">
-            {/* Outer dial ring */}
-            <circle cx="65" cy="65" r="58" fill="none" stroke="var(--border)" strokeWidth="2" />
-            <circle cx="65" cy="65" r="54" fill="var(--surface)" stroke="none" />
-
-            {/* Compass degree tick marks */}
-            {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => {
-              const rad = (deg - 90) * (Math.PI / 180);
-              const x1 = 65 + 48 * Math.cos(rad);
-              const y1 = 65 + 48 * Math.sin(rad);
-              const x2 = 65 + 56 * Math.cos(rad);
-              const y2 = 65 + 56 * Math.sin(rad);
-              return (
-                <line
-                  key={deg}
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke={deg === 0 ? 'var(--accent-red)' : 'var(--text-muted)'}
-                  strokeWidth={deg % 90 === 0 ? '2' : '1'}
-                />
-              );
-            })}
-
-            {/* Cardinal Labels */}
-            <text x="65" y="24" textAnchor="middle" fill="var(--accent-red)" fontSize="10" fontWeight="700" fontFamily={DesignTokens.typography.mono}>N</text>
-            <text x="110" y="69" textAnchor="middle" fill="var(--text-secondary)" fontSize="9" fontWeight="600" fontFamily={DesignTokens.typography.mono}>E</text>
-            <text x="65" y="114" textAnchor="middle" fill="var(--text-secondary)" fontSize="9" fontWeight="600" fontFamily={DesignTokens.typography.mono}>S</text>
-            <text x="20" y="69" textAnchor="middle" fill="var(--text-secondary)" fontSize="9" fontWeight="600" fontFamily={DesignTokens.typography.mono}>W</text>
-
-            {/* Rotating Needle */}
-            <g style={{
-              transform: `rotate(${compassHeading}deg)`,
-              transformOrigin: '65px 65px',
-              transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
-            }}>
-              {/* North Pointer (Red) */}
-              <polygon points="65,30 60,65 70,65" fill="var(--accent-red)" />
-              {/* South Pointer (Slate) */}
-              <polygon points="65,100 60,65 70,65" fill="var(--text-muted)" />
-              {/* Center Pivot Pin */}
-              <circle cx="65" cy="65" r="4.5" fill="var(--text-primary)" stroke="var(--surface)" strokeWidth="1.5" />
+              <polygon points="65,30 60,65 70,65" fill="#ef4444" />
+              <polygon points="65,100 60,65 70,65" fill="var(--muted-foreground)" />
+              <circle cx="65" cy="65" r="4" fill="var(--foreground)" />
             </g>
           </svg>
-        </div>
 
-        {/* Optical Auxiliary Toggles */}
-        <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-          <button
-            type="button"
-            onClick={() => setHeadlightsOn(!headlightsOn)}
-            style={{
-              padding: '4px 10px',
-              fontSize: '11px',
-              fontWeight: 600,
-              borderRadius: '6px',
-              background: headlightsOn ? 'var(--pastel-yellow-bg)' : 'var(--surface)',
-              color: headlightsOn ? 'var(--pastel-yellow-text)' : 'var(--text-muted)',
-              border: `1px solid ${headlightsOn ? 'var(--pastel-yellow-border)' : 'var(--border)'}`,
-              cursor: 'pointer'
-            }}
-          >
-            Illumination: {headlightsOn ? 'ON' : 'OFF'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setLaserGuideOn(!laserGuideOn)}
-            style={{
-              padding: '4px 10px',
-              fontSize: '11px',
-              fontWeight: 600,
-              borderRadius: '6px',
-              background: laserGuideOn ? 'var(--pastel-blue-bg)' : 'var(--surface)',
-              color: laserGuideOn ? 'var(--pastel-blue-text)' : 'var(--text-muted)',
-              border: `1px solid ${laserGuideOn ? 'var(--pastel-blue-border)' : 'var(--border)'}`,
-              cursor: 'pointer'
-            }}
-          >
-            Laser Reticle: {laserGuideOn ? 'ON' : 'OFF'}
-          </button>
-        </div>
-      </div>
-
-      {/* 3. Live Crawler Command Terminal / Bus Stream */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        height: '100%',
-        minHeight: '160px'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '8px'
-        }}>
-          <span style={{
-            fontSize: '11px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            color: 'var(--text-secondary)'
-          }}>
-            Actuator Bus Telemetry
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isConnected ? 'var(--accent-emerald)' : 'var(--accent-amber)', animation: 'pulseBeacon 2s infinite' }} />
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: DesignTokens.typography.mono }}>
-              115200 BAUD
-            </span>
+          <div className="flex gap-2">
+            <Button
+              variant={headlightsOn ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() => setHeadlightsOn(!headlightsOn)}
+            >
+              LED: {headlightsOn ? 'ON' : 'OFF'}
+            </Button>
+            <Button
+              variant={laserGuideOn ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() => setLaserGuideOn(!laserGuideOn)}
+            >
+              Reticle: {laserGuideOn ? 'ON' : 'OFF'}
+            </Button>
           </div>
         </div>
 
-        {/* Terminal readout box */}
-        <div style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: '8px',
-          padding: '10px 12px',
-          fontFamily: DesignTokens.typography.mono,
-          fontSize: '11px',
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '6px',
-          overflowY: 'auto',
-          maxHeight: '130px'
-        }}>
-          {commandLog.map((log) => (
-            <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
-              <span style={{ color: log.text.includes('STOP') ? 'var(--accent-red)' : 'var(--text-primary)' }}>
-                {log.text}
-              </span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{log.time}</span>
-            </div>
-          ))}
+        {/* Command Log */}
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Command Bus
+            </span>
+            <Badge variant={isConnected ? 'success' : 'warning'} className="font-mono text-[10px]">
+              {isConnected ? 'LINK OK' : roverStatus}
+            </Badge>
+          </div>
+
+          <div className="flex-1 space-y-1.5 overflow-y-auto rounded-md border bg-muted/40 p-3 font-mono text-[11px] min-h-[140px]">
+            {commandLog.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-muted-foreground">
+                Awaiting directional input...
+              </div>
+            ) : (
+              commandLog.map((log) => (
+                <div key={log.id} className="flex items-center justify-between gap-2">
+                  <span className={cn(log.text.includes('STOP') && 'font-semibold text-red-500')}>
+                    {log.text}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">{log.time}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

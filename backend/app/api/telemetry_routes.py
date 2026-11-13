@@ -92,7 +92,7 @@ async def get_telemetry_history():
 @router.post("/ingest")
 async def ingest_telemetry(payload: Dict[str, Any], db: Session = Depends(get_db)):
     """
-    Ingests telemetry into the Scala reactive pipeline and simultaneously updates
+    Ingests telemetry into the Scala reactive stream engine and simultaneously updates
     the Rover status in the database.
     """
     rover_code = payload.get("roverCode") or payload.get("rover_code") or "ROVER-01"
@@ -110,15 +110,17 @@ async def ingest_telemetry(payload: Dict[str, Any], db: Session = Depends(get_db
     except Exception as db_err:
         logger.debug(f"Rover DB sync notice: {db_err}")
 
-    # 2. Forward to Scala Pekko reactive stream
-    target_url = f"{settings.SCALA_TELEMETRY_URL}/api/v1/telemetry/ingest"
-    try:
-        async with httpx.AsyncClient(timeout=2.0) as client:
-            resp = await client.post(target_url, json=payload)
-            if resp.status_code in (200, 202):
-                return resp.json()
-    except Exception as exc:
-        logger.debug(f"Scala stream forward notice: {exc}")
+    # 2. Forward to Scala Pekko reactive stream (non-blocking background task)
+    async def _relay():
+        try:
+            target_url = f"{settings.SCALA_TELEMETRY_URL}/api/v1/telemetry/ingest"
+            async with httpx.AsyncClient(timeout=0.5) as client:
+                await client.post(target_url, json=payload)
+        except Exception:
+            pass
+
+    import asyncio
+    asyncio.create_task(_relay())
 
     return {
         "status": "INGESTED",

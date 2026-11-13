@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     host: '0.0.0.0',
     port: 5173,
@@ -16,8 +16,8 @@ export default defineConfig({
       '/api': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
-      }
-    }
+      },
+    },
   },
   build: {
     rollupOptions: {
@@ -27,19 +27,19 @@ export default defineConfig({
             if (id.includes('recharts') || id.includes('d3') || id.includes('victory-vendor')) {
               return 'vendor-recharts';
             }
+            if (id.includes('@radix-ui')) {
+              return 'vendor-radix';
+            }
             if (id.includes('lucide-react')) {
               return 'vendor-icons';
-            }
-            if (id.includes('canvas-confetti')) {
-              return 'vendor-confetti';
             }
             if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
               return 'vendor-react';
             }
             return 'vendor-core';
           }
-        }
-      }
-    }
-  }
-})
+        },
+      },
+    },
+  },
+});

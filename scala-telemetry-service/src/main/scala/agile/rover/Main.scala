@@ -2,7 +2,7 @@ package agile.rover
 
 import agile.rover.http.TelemetryRoutes
 import agile.rover.model.RoverTelemetry
-import agile.rover.stream.TelemetryStreamPipeline
+import agile.rover.stream.TelemetryStreamEngine
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.http.scaladsl.Http
@@ -26,8 +26,8 @@ object Main {
     val bindHost = sys.env.getOrElse("HOST", "0.0.0.0")
     val displayHost = if (bindHost == "0.0.0.0" || bindHost == "::") "127.0.0.1" else bindHost
 
-    val pipeline = new TelemetryStreamPipeline(windowSize = 10, maxHistory = 60)
-    val telemetryRoutes = new TelemetryRoutes(pipeline)
+    val streamEngine = new TelemetryStreamEngine(windowSize = 10, maxHistory = 60)
+    val telemetryRoutes = new TelemetryRoutes(streamEngine)
 
     val bindingFuture = Http().newServerAt(bindHost, port).bind(telemetryRoutes.routes)
 
@@ -71,7 +71,7 @@ object Main {
             batteryPercentage = (batt * 10).round / 10.0,
             standoffDistanceMm = 250.0
           )
-          pipeline.ingest(sample)
+          streamEngine.ingest(sample)
         }
 
       case Failure(ex) =>
@@ -81,7 +81,7 @@ object Main {
 
     // Graceful JVM shutdown hook
     sys.addShutdownHook {
-      println("\n[!] Shutting down Agile Rover Scala Telemetry Stream Pipeline...")
+      println("\n[!] Shutting down Agile Rover Scala Telemetry Stream Engine...")
       bindingFuture
         .flatMap(_.unbind())
         .onComplete(_ => system.terminate())

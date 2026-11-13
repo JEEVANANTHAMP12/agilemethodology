@@ -74,7 +74,7 @@ async def upload_inspection_image(
     calibrated_px_per_mm = settings.DEFAULT_PIXELS_PER_MM * (250.0 / max(50.0, distance_to_wall_mm))
     detector = CrackDetector(pixels_per_mm=calibrated_px_per_mm)
 
-    # Run Crack Detection Pipeline
+    # Run Crack Detection Engine
     try:
         detection_result = detector.analyze_image(
             input_image_path=str(original_file_path),

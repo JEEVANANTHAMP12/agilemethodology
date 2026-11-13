@@ -15,6 +15,7 @@ from app.api.alert_routes import router as alert_router
 # Import API Routers
 from app.api.auth_routes import router as auth_router
 from app.api.dashboard_routes import router as dashboard_router
+from app.api.db_routes import router as db_router
 from app.api.defect_routes import router as defect_router
 from app.api.image_routes import router as image_router
 from app.api.inspection_routes import router as inspection_router
@@ -27,6 +28,7 @@ from app.api.telemetry_routes import router as telemetry_router
 from app.config import settings
 from app.core.security import hash_password
 from app.database import Base, SessionLocal, engine, get_db
+from app.db_sync import register_db_sync_listeners
 from app.models import (
     Building,
     Inspection,
@@ -164,8 +166,9 @@ def seed_initial_data():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Ensure tables and baseline seed
+    # Startup: Ensure tables, real-time sync listeners, and baseline seed
     logger.info(f"Starting {settings.PROJECT_NAME} on engine: {engine.url.drivername}")
+    register_db_sync_listeners()
     Base.metadata.create_all(bind=engine)
     seed_initial_data()
     yield
@@ -244,6 +247,7 @@ app.include_router(report_router, prefix=settings.API_V1_STR)
 app.include_router(structure_router, prefix=settings.API_V1_STR)
 app.include_router(dashboard_router, prefix=settings.API_V1_STR)
 app.include_router(telemetry_router, prefix=settings.API_V1_STR)
+app.include_router(db_router, prefix=settings.API_V1_STR)
 
 # System Health Check Endpoint
 @app.get("/health", tags=["System"])
@@ -308,36 +312,6 @@ def health_check(db: Session = Depends(get_db)):
             "battery_percentage": rover.battery_percentage if rover else 0.0
         },
         "timestamp": datetime.now(timezone.utc).isoformat()
-    }
-
-@app.get(f"{settings.API_V1_STR}/db/status", tags=["System"])
-def database_status():
-    """Returns runtime database configuration and collection statistics."""
-    from app.mongodb import ALL_COLLECTIONS, get_mongo_db, is_mongo_connected
-    mongo_ok = is_mongo_connected()
-    collections_stat = {}
-    if mongo_ok:
-        try:
-            m_db = get_mongo_db()
-            if m_db is not None:
-                for c in ALL_COLLECTIONS:
-                    collections_stat[c] = m_db[c].count_documents({})
-        except Exception:
-            pass
-
-    return {
-        "configured_engine": settings.DB_TYPE,
-        "database_name": settings.MONGO_DB if settings.DB_TYPE.lower() == "mongodb" else settings.MYSQL_DB,
-        "mongodb": {
-            "connected": mongo_ok,
-            "target_database": settings.MONGO_DB,
-            "host": f"{settings.MONGO_HOST}:{settings.MONGO_PORT}",
-            "collections": collections_stat
-        },
-        "sql_engine": {
-            "dialect": engine.dialect.name,
-            "url": str(engine.url)
-        }
     }
 
 # Mount static directory for backend assets if present

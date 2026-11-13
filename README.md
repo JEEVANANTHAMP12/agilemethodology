@@ -1,4 +1,4 @@
-# 🏗️ AGILE ROVER — Autonomous Structural Health Intelligence & Crack Metrology System
+﻿# 🏗️ AGILE ROVER — Autonomous Structural Health Intelligence & Crack Metrology System
 
 <p align="center">
   <img src="https://img.shields.io/badge/Scala-3.3.3-DC322F?style=for-the-badge&logo=scala&logoColor=white" alt="Scala 3" />
@@ -171,11 +171,11 @@ flowchart TD
 ### 2. OpenCV Sub-Pixel Metrology & Morphology Engine
 
 <p align="center">
-  <a href="file:///c:/project/agile/docs/presentation_assets/slide13_crack_metrology_pipeline.png">
-    <img src="docs/presentation_assets/slide13_crack_metrology_pipeline.png" alt="OpenCV Sub-Pixel Crack Metrology Pipeline" width="100%" style="border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);" />
+  <a href="file:///c:/project/agile/docs/presentation_assets/slide13_crack_metrology_workflow.png">
+    <img src="docs/presentation_assets/slide13_crack_metrology_workflow.png" alt="OpenCV Sub-Pixel Crack Metrology Workflow" width="100%" style="border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);" />
   </a>
   <br />
-  <em><b>Figure 4:</b> 5-Step Computer Vision Processing Pipeline — From Illumination Equalization to Euclidean Distance Transform Profiling.</em>
+  <em><b>Figure 4:</b> 5-Step Computer Vision Processing Workflow — From Illumination Equalization to Euclidean Distance Transform Profiling.</em>
 </p>
 
 <p align="center">
@@ -258,7 +258,7 @@ To experience the most productive developer environment, inspect reactive stream
 * **Scala (Metals) (`scalameta.metals`):**
   Provides full Scala 3 language server support, code completion, MUnit test execution, and sbt build navigation for `scala-telemetry-service/`.
 * **Python & Pylance (`ms-python.python`, `ms-python.vscode-pylance`):**
-  Fast type-checking and autocompletion for FastAPI routes and OpenCV vision pipelines.
+  Fast type-checking and autocompletion for FastAPI routes and OpenCV vision workflows.
 * **Oxlint (`oxc.oxlint`):**
   Sub-millisecond AST linter for React 19 JSX and hooks.
 * **Thunder Client / REST Client (`rangav.thunder-client`):**

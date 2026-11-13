@@ -107,16 +107,11 @@ def migrate_sqlite_to_mongodb():
         coll = db[coll_name]
 
         inserted_count = 0
-        skipped_count = 0
+        updated_count = 0
 
         for row in rows:
             doc = dict(row)
             pk_val = doc.get(pk_field)
-
-            # Check if document already exists
-            if pk_val is not None and coll.find_one({pk_field: pk_val}):
-                skipped_count += 1
-                continue
 
             # Convert date/time fields to Python datetime
             for col in columns:
@@ -137,11 +132,27 @@ def migrate_sqlite_to_mongodb():
                 if bool_col in doc and doc[bool_col] is not None:
                     doc[bool_col] = bool(doc[bool_col])
 
-            coll.insert_one(doc)
-            inserted_count += 1
+            # Upsert document using natural or primary key
+            filter_q = {}
+            if coll_name == COLLECTION_USERS and "username" in doc:
+                filter_q = {"username": doc["username"]}
+            elif coll_name == COLLECTION_ROVERS and "rover_code" in doc:
+                filter_q = {"rover_code": doc["rover_code"]}
+            elif coll_name == COLLECTION_INSPECTIONS and doc.get("inspection_code"):
+                filter_q = {"$or": [{"inspection_code": doc["inspection_code"]}, {"id": pk_val}]}
+            elif pk_val is not None:
+                filter_q = {pk_field: pk_val}
+            else:
+                filter_q = doc
 
-        total_migrated_all += inserted_count
-        print(f"  [+] `{table_name}` -> collection `{coll_name}`: {inserted_count} inserted, {skipped_count} already existed.")
+            res = coll.replace_one(filter_q, doc, upsert=True)
+            if res.upserted_id is not None:
+                inserted_count += 1
+            else:
+                updated_count += 1
+
+        total_migrated_all += (inserted_count + updated_count)
+        print(f"  [+] `{table_name}` -> collection `{coll_name}`: {inserted_count} newly inserted, {updated_count} synchronized.")
 
     sqlite_conn.close()
 

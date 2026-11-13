@@ -1,11 +1,9 @@
 import React from 'react';
-import {
-  Bot,
-  RefreshCw,
-  Sun,
-  Moon,
-} from 'lucide-react';
-import { Badge, Button, Tooltip } from '../ui';
+import { Bot, RefreshCw, Sun, Moon } from 'lucide-react';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { cn } from '../lib/utils';
 
 export const Navbar = ({
   roverStatus = 'CONNECTED',
@@ -20,68 +18,71 @@ export const Navbar = ({
   const isConnected = roverStatus === 'CONNECTED';
 
   return (
-    <header className="ui-nav">
-      <div className="ui-nav__inner">
-        <a className="ui-nav__brand" href="#/" aria-label="Agile Rover dashboard">
-          <span className="ui-nav__mark">
-            <Bot size={17} />
-          </span>
-          <span className="ui-nav__brand-text">
-            <span className="ui-nav__brand-title">Agile Rover</span>
-            <span className="ui-nav__brand-sub">Structural Intelligence</span>
-          </span>
-          <span className={`ui-nav__live ${isConnected ? '' : 'is-offline'}`} title={`Rover status: ${roverStatus}`}>
-            <span className="ui-live-dot" />
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+        {/* Brand */}
+        <div className="flex items-center gap-3">
+          <a href="#/" className="flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md border bg-muted">
+              <Bot className="h-4 w-4" />
+            </span>
+            <span>Agile Rover</span>
+          </a>
+          <Badge variant={isConnected ? 'success' : 'destructive'} className="hidden sm:inline-flex">
             {isConnected ? 'Online' : roverStatus}
-          </span>
-        </a>
+          </Badge>
+        </div>
 
-        <nav className="ui-nav__links" aria-label="Dashboard workspaces">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`ui-nav__link ${activeTab === tab.id ? 'is-active' : ''}`}
-              onClick={() => onTabChange(tab.id)}
-              title={tab.label}
-              aria-label={tab.label}
-              aria-current={activeTab === tab.id ? 'page' : undefined}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-              {tab.badge ? <span className="ui-nav__badge">{tab.badge}</span> : null}
-            </button>
-          ))}
+        {/* Navigation Tabs */}
+        <nav className="flex items-center gap-1 overflow-x-auto" aria-label="Primary workspaces">
+          {tabs.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onTabChange(tab.id)}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
+                  active
+                    ? 'bg-secondary text-foreground'
+                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                )}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+                {tab.badge ? (
+                  <span className="ml-0.5 rounded-full bg-destructive px-1.5 py-0.2 text-[10px] font-semibold text-destructive-foreground">
+                    {tab.badge}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
         </nav>
 
-        <div className="ui-nav__actions">
-          <Tooltip label={theme === 'dark' ? 'Light theme' : 'Dark theme'} position="bottom">
-            <button
-              type="button"
-              className="ui-icon-btn"
-              onClick={onToggleTheme}
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-            >
-              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-            </button>
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggleTheme}
+                aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              >
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</TooltipContent>
           </Tooltip>
 
           {onSync && (
-            <Button
-              variant="outline"
-              size="sm"
-              loading={isSyncing}
-              icon={<RefreshCw size={13} />}
-              onClick={onSync}
-            >
-              Sync
+            <Button variant="outline" size="sm" onClick={onSync} loading={isSyncing}>
+              {!isSyncing && <RefreshCw className="h-3.5 w-3.5" />}
+              <span className="hidden sm:inline">Sync</span>
             </Button>
-          )}
-
-          {!isConnected && (
-            <Badge variant="danger" size="sm" dot>
-              {roverStatus}
-            </Badge>
           )}
         </div>
       </div>
